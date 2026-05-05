@@ -4,7 +4,7 @@ import { computed } from 'vue';
 const footerHTML = computed(() => {
   const baseYear = 2025;
   const currentYear = new Date().getFullYear();
-  const hostname = location.hostname;
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   
   let yearStr = baseYear.toString();
   if (currentYear > baseYear) {
