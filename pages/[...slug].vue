@@ -10,7 +10,7 @@ const footerHTML = computed(() => {
   if (currentYear > baseYear) {
     yearStr = `${baseYear}–${currentYear}`;
   } else if (currentYear < baseYear) {
-    yearStr = `${currentYear}–${baseYear}`;
+    yearStr = `${baseYear}–${currentYear}`;
   }
   
   if(hostname === "hamuzon.github.io"){
@@ -37,6 +37,35 @@ const footerHTML = computed(() => {
 </template>
 
 <style scoped>
+/* Global styles from the provided HTML snippet */
+/* These styles are typically defined in a global CSS file or app.vue in a Nuxt application. */
+/* They are placed here in a non-scoped style block to directly replicate the provided HTML's appearance for the 404 page. */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+:root {
+  --selection-bg: rgba(0, 229, 255, 0.4);
+  --selection-text: #ffffff;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+body {
+  background: #0a1a2b;
+  font-family: 'Roboto', sans-serif;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-image: radial-gradient(circle at 50% 0%, #1e3a5f 0%, #0a1a2b 70%);
+}
+
 .container {
   background: rgba(255, 255, 255, 0.07);
   -webkit-backdrop-filter: blur(10px);
@@ -44,7 +73,7 @@ const footerHTML = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   padding: 3rem 2rem;
-  max-width: 480px;
+  max-width: 480px; /* This was already present */
   width: 100%;
   box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
   text-align: center;
