@@ -56,21 +56,19 @@ const getInitialState = () => {
   let resLang = q.lang;
   let resMode = 'summer';
 
-  // 1. Path Parsing (createPath or Direct Path) - Regex for performance
+  // 1. Path/createPath Parsing (High Speed Regex)
   const targetPath = q.createPath ? String(q.createPath) : route.path;
-  if (!resYear) {
-    const match = targetPath.match(/\/(\d{4})(?:\/(ja|en))?/);
-    if (match) {
-      resYear = match[1];
-      if (!resLang) resLang = match[2];
-    }
+  const match = targetPath.match(/\/(\d{4})(?:\/(ja|en))?/);
+  if (match) {
+    resYear = resYear || match[1];
+    resLang = resLang || match[2];
   }
 
-  // 2. Client-side LocalStorage Fallback
+  // 2. Client-side Fallback (Server-side skips to keep SEO static)
   if (import.meta.client) {
-    const reset = /^(1|on)$/i.test(String(q.reset || q.reboot || q.restart));
+    const reset = /^(1|on|true)$/i.test(String(q.reset || q.reboot || q.restart));
     if (!reset) {
-      if (!resLang) resLang = localStorage.getItem('olympicCountdownLang');
+      resLang = resLang || localStorage.getItem('olympicCountdownLang');
       if (!resYear) {
         const sYear = localStorage.getItem('olympicCountdownYear');
         const sMode = localStorage.getItem('olympicCountdownMode');
@@ -82,15 +80,11 @@ const getInitialState = () => {
     }
   }
 
-  // 3. Validation & Defaults
+  // 3. Validation & Initialization
   resLang = (resLang === 'en' || resLang === 'ja') ? resLang : 'ja';
-  if (resYear) {
-    if (eventsData.winter[resYear]) resMode = 'winter';
-    else if (eventsData.summer[resYear]) resMode = 'summer';
-    else resYear = null; // Invalid year check
-  }
-
-  if (!resYear) {
+  if (resYear && eventsData.winter[resYear]) resMode = 'winter';
+  else if (resYear && eventsData.summer[resYear]) resMode = 'summer';
+  else {
     resYear = findNearestFutureEvent();
     resMode = eventsData.winter[resYear] ? 'winter' : 'summer';
   }
@@ -190,7 +184,7 @@ const seoData = computed(() => {
   const data = eventsData[mode.value][currentYearKey.value];
   const cityName = data.city[lang.value];
   const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
-  
+
   const title = isJa
     ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン`
     : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;
@@ -198,8 +192,10 @@ const seoData = computed(() => {
     ? `${currentYearKey.value} ${cityName} ${season}オリンピックまでのカウントダウンだよ！開催中・終了後の経過時間もリアルタイムで表示。`
     : `${currentYearKey.value} ${cityName} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
-  // OGP URLをクエリパラメータではなくパス形式に最適化（SEO向上）
-  const baseUrl = new URL(config.app.baseURL, requestUrl.origin).toString().replace(/\/$/, '');
+  // OGP URLの正規化 (Cloudflare/Actions環境でのSSR対応)
+  const host = requestUrl.host || 'hamuzon.github.io';
+  const protocol = requestUrl.protocol || 'https:';
+  const baseUrl = `${protocol}//${host}${config.app.baseURL}`.replace(/\/$/, '');
   const prettyUrl = `${baseUrl}/${currentYearKey.value}/${lang.value}`;
 
   return { 
@@ -214,11 +210,11 @@ useSeoMeta({
   ogTitle: () => seoData.value?.title,
   description: () => seoData.value?.description,
   ogDescription: () => seoData.value?.description,
-  ogUrl: () => seoData.value?.url || requestUrl.href,
+  ogUrl: () => seoData.value?.url,
   ogLocale: () => seoData.value?.locale,
   twitterTitle: () => seoData.value?.title,
   twitterDescription: () => seoData.value?.description,
-  twitterCard: 'summary',
+  twitterCard: 'summary_large_image',
 });
 
 useHead({
@@ -340,7 +336,7 @@ const noticeText = computed(() => {
 const footerHTML = computed(() => {
   const baseYear = 2025;
   const currentYear = new Date().getFullYear();
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const host = requestUrl.host || '';
   
   let yearStr = baseYear.toString();
   if (currentYear > baseYear) {
@@ -349,11 +345,11 @@ const footerHTML = computed(() => {
     yearStr = `${currentYear}–${baseYear}`;
   }
   
-  if(hostname.includes("hamuzon.github.io")){
+  if(host.includes("hamuzon.github.io")){
     return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
-  } else if (hostname.includes("hamuzon-jp.f5.si")) {
+  } else if (host.includes("hamuzon-jp.f5.si")) {
     return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
-  } else if(hostname.includes("hamusata.f5.si")){
+  } else if(host.includes("hamusata.f5.si")){
     return `&copy; ${yearStr} <a href="https://hamusata.f5.si" target="_blank">@hamusata</a>`;
   } else {
     return `&copy; ${yearStr} Olympic Countdown (${currentYearKey.value || currentYear})`;

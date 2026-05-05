@@ -1,23 +1,24 @@
 <script setup>
 import { computed } from 'vue';
 
+const requestUrl = useRequestURL();
 const footerHTML = computed(() => {
   const baseYear = 2025;
   const currentYear = new Date().getFullYear();
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const host = requestUrl.host || '';
   
   let yearStr = baseYear.toString();
   if (currentYear > baseYear) {
     yearStr = `${baseYear}–${currentYear}`;
   } else if (currentYear < baseYear) {
-    yearStr = `${baseYear}–${currentYear}`;
+    yearStr = `${currentYear}–${baseYear}`;
   }
   
-  if(hostname === "hamuzon.github.io"){
+  if(host.includes("hamuzon.github.io")){
     return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
-  } else if (hostname.includes("hamuzon-jp.f5.si")) {
+  } else if (host.includes("hamuzon-jp.f5.si")) {
     return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
-  } else if(hostname.includes("hamusata.f5.si")){
+  } else if(host.includes("hamusata.f5.si")){
     return `&copy; ${yearStr} <a href="https://hamusata.f5.si" target="_blank">@hamusata</a>`;
   } else {
     return `&copy; ${yearStr} Olympic Countdown`;
