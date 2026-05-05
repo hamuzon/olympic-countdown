@@ -238,8 +238,10 @@ watchEffect(() => {
     ? window.location.origin 
     : (process.env.GITHUB_REPOSITORY ? `https://${process.env.GITHUB_REPOSITORY.split('/')[0]}.github.io` : '');
 
-  const fullBaseURL = (origin + config.app.baseURL).replace(/\/$/, '');
-  const canonicalUrl = `${fullBaseURL}/?year=${currentYearKey.value}&lang=${lang.value}`;
+  // Normalize canonical URL
+  const baseWithSlash = config.app.baseURL.endsWith('/') ? config.app.baseURL : config.app.baseURL + '/';
+  const fullBaseURL = (origin + baseWithSlash);
+  const canonicalUrl = `${fullBaseURL}?year=${currentYearKey.value}&lang=${lang.value}`;
   
   /**
    * Sync Head with Reactive Meta

@@ -11,12 +11,15 @@ export async function onRequest(context) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
   
-  // ルートまたはパスベースのアクセス（/2024/ja など）を処理
-  const isRoot = url.pathname === "/" || url.pathname.endsWith("/index.html");
+  // パスセグメントを解析
   const pathParts = url.pathname.split("/").filter(Boolean);
-  const isPathBased = pathParts.length >= 1 && /^\d{4}$/.test(pathParts[0]);
+  // 年数（4桁数字）が含まれるインデックスを探す（サブディレクトリ対応）
+  const yearIdx = pathParts.findIndex(p => /^\d{4}$/.test(p));
+  const isPathBased = yearIdx !== -1;
+  // ルート（またはサブディレクトリのルート）判定
+  const isRoot = url.pathname.endsWith("/") || url.pathname.endsWith("/index.html") || !isPathBased;
   
-  if (!isRoot && !isPathBased) return response;
+  if (!isRoot && !isPathBased && !url.searchParams.has("createPath")) return response;
 
   // --- Data Definition (Synced with index.vue) ---
   const events = {
@@ -50,11 +53,11 @@ export async function onRequest(context) {
     }
   }
 
-  if (!year && pathParts.length >= 1) {
-    if (/^\d{4}$/.test(pathParts[0])) {
-      year = pathParts[0];
-      if (!lang && pathParts.length >= 2) lang = pathParts[1];
-    }
+  // パス（/2024/en など）からの抽出
+  if (!year && isPathBased) {
+    year = pathParts[yearIdx];
+    const potentialLang = pathParts[yearIdx + 1];
+    if (!lang && (potentialLang === "ja" || potentialLang === "en")) lang = potentialLang;
   }
 
   // Defaults
@@ -84,8 +87,10 @@ export async function onRequest(context) {
     ? `${year} ${city} ${season}オリンピックまでのカウントダウンだよ！開催中・終了後の経過時間もリアルタイムで表示。`
     : `${year} ${city} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
-  // URL Construction
-  const canonicalUrl = `${url.origin}${url.pathname}?year=${year}&lang=${lang}`;
+  // URL Construction (Normalize to query-based URL for OGP consistency)
+  const basePath = yearIdx !== -1 ? "/" + pathParts.slice(0, yearIdx).join("/") : url.pathname.replace(/index\.html$/, "").replace(/\/$/, "");
+  const normalizedBase = basePath.endsWith("/") ? basePath : basePath + "/";
+  const canonicalUrl = `${url.origin}${normalizedBase}?year=${year}&lang=${lang}`;
   
   // --- HTML Rewriting ---
   return new HTMLRewriter()
