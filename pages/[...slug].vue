@@ -1,29 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { useFooter } from '~/composables/useFooter';
 
-const requestUrl = useRequestURL();
-const footerHTML = computed(() => {
-  const baseYear = 2025;
-  const currentYear = new Date().getFullYear();
-  const host = requestUrl.host || '';
-  
-  let yearStr = baseYear.toString();
-  if (currentYear > baseYear) {
-    yearStr = `${baseYear}–${currentYear}`;
-  } else if (currentYear < baseYear) {
-    yearStr = `${currentYear}–${baseYear}`;
-  }
-  
-  if(host.includes("hamuzon.github.io")){
-    return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
-  } else if (host.includes("hamuzon-jp.f5.si")) {
-    return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
-  } else if(host.includes("hamusata.f5.si")){
-    return `&copy; ${yearStr} <a href="https://hamusata.f5.si" target="_blank">@hamusata</a>`;
-  } else {
-    return `&copy; ${yearStr} Olympic Countdown`;
-  }
-});
+const { footerHTML } = useFooter(); // No specific year for 404 page, so it defaults to current year
 </script>
 
 <template>

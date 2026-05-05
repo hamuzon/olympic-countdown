@@ -333,30 +333,8 @@ const noticeText = computed(() => {
     : "Note: Countdown is for reference only and may differ from actual start times.";
 });
 
-const footerHTML = computed(() => {
-  const baseYear = 2025;
-  const currentYear = new Date().getFullYear();
-  const host = requestUrl.host || '';
-  
-  let yearStr = baseYear.toString();
-  if (currentYear > baseYear) {
-    yearStr = `${baseYear}–${currentYear}`;
-  } else if (currentYear < baseYear) {
-    yearStr = `${currentYear}–${baseYear}`;
-  }
-  
-  if(host.includes("hamuzon.github.io")){
-    return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
-  } else if (host.includes("hamuzon-jp.f5.si")) {
-    return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
-  } else if(host.includes("hamusata.f5.si")){
-    return `&copy; ${yearStr} <a href="https://hamusata.f5.si" target="_blank">@hamusata</a>`;
-  } else {
-    return `&copy; ${yearStr} Olympic Countdown (${currentYearKey.value || currentYear})`;
-  }
-});
-
 // --- Lifecycle ---
+const { footerHTML } = useFooter(currentYearKey); // Pass currentYearKey ref
 onMounted(() => {
   if (import.meta.client) {
     localStorage.setItem('olympicCountdownLang', lang.value);

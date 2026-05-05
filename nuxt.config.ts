@@ -29,6 +29,13 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
+    experimental: {
+      // Enable Node.js compatibility for Cloudflare Pages functions
+      // This helps ensure Node.js APIs work as expected in the Cloudflare environment.
+      cloudflare: {
+        nodejsCompat: true
+      }
+    },
     prerender: {
       routes: [
         '/',
