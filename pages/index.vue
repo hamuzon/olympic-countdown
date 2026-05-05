@@ -61,25 +61,61 @@ const getInitialState = () => {
     }
   }
 
-  const l = (qLang === 'en' || qLang === 'ja') ? qLang : 'ja';
-  let m = 'summer';
-  let y = qYear || null;
+  let finalLang = (qLang === 'en' || qLang === 'ja') ? qLang : 'ja';
+  let finalYear = qYear;
+  let finalMode = 'summer'; // Default mode, will be refined
 
-  // Validate year and mode
-  if (y) {
-    if (eventsData.winter[y]) {
-      m = 'winter';
-    } else if (!eventsData.summer[y]) {
-      y = null;
+  // Client-side: Prioritize localStorage if available and not overridden by URL
+  // This ensures the initial render on the client reflects user's last choice,
+  // reducing flicker if localStorage differs from URL/default.
+  if (process.client) {
+    const isReset = ["reset", "reboot", "restart"].some(k => 
+      ["1", "on"].includes(String(route.query[k]).toLowerCase())
+    );
+
+    if (!isReset) {
+      const storedLang = localStorage.getItem('olympicCountdownLang');
+      if (storedLang && (storedLang === 'en' || storedLang === 'ja') && !qLang) {
+        finalLang = storedLang; // localStorage overrides default lang if no URL lang
+      }
+
+      const storedMode = localStorage.getItem('olympicCountdownMode');
+      const storedYear = localStorage.getItem('olympicCountdownYear');
+
+      // If no year was found in URL (qYear is null), try localStorage year
+      if (!qYear && storedYear && storedMode) {
+        if (eventsData[storedMode] && eventsData[storedMode][storedYear]) {
+          finalYear = storedYear;
+          finalMode = storedMode; // Use stored mode if year is from localStorage
+        }
+      }
     }
-  } else {
-    // Find the nearest future event or the latest one
-    const now = Date.now();
-    const allYears = [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)].sort();
-    y = allYears.find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || allYears[allYears.length - 1];
   }
 
-  return { lang: l, mode: m, year: y };
+  // Determine mode based on finalYear, if it's already set (from URL or localStorage)
+  if (finalYear) {
+    if (eventsData.winter[finalYear]) {
+      finalMode = 'winter';
+    } else if (eventsData.summer[finalYear]) {
+      finalMode = 'summer';
+    } else {
+      // If finalYear is invalid (e.g., from URL but not in eventsData), reset it
+      finalYear = null;
+    }
+  }
+
+  // If finalYear is still null (e.g., invalid URL year, no valid localStorage year, no URL year), find nearest future
+  if (!finalYear) {
+    finalYear = findNearestFutureEvent();
+    // Determine mode for the auto-selected year
+    if (eventsData.winter[finalYear]) {
+      finalMode = 'winter';
+    } else if (eventsData.summer[finalYear]) {
+      finalMode = 'summer';
+    }
+  }
+
+  return { lang: finalLang, mode: finalMode, year: finalYear };
 };
 
 const initialState = getInitialState();
@@ -158,7 +194,7 @@ function formatDiff(fromDate, toDate) {
 /**
  * Automatically selects the nearest future event in the given mode.
  */
-function autoSelectNearestInMode(m) {
+function autoSelectNearestInMode(m) { // This function is still used by setMode, so keep it.
   const now = Date.now();
   const years = Object.keys(eventsData[m]).sort();
   const futureYear = years.find(y => new Date(eventsData[m][y].end).getTime() > now);
@@ -214,8 +250,8 @@ function setMode(m) {
   if (m === 'winter' && !CONFIG.WINTER_ENABLED) return;
 
   mode.value = m;
-  autoSelectNearestInMode(m);
-  
+  autoSelectNearestInMode(m); // This will update currentYearKey.value
+
   if (import.meta.client) {
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
@@ -337,25 +373,13 @@ const footerHTML = computed(() => {
 
 // --- Lifecycle ---
 onMounted(() => {
-  // Priority: Query > LocalStorage > Default
+  // Save current state to localStorage on client-side
+  // The initial state is now determined by getInitialState, which includes localStorage on client.
   if (import.meta.client) {
-    const isReset = ["reset", "reboot", "restart"].some(k => 
-      ["1", "on"].includes(String(route.query[k]).toLowerCase())
-    );
-
-    const storedLang = !isReset ? localStorage.getItem('olympicCountdownLang') : null;
-    if (storedLang === "ja" || storedLang === "en") lang.value = storedLang;
-
-    mode.value = (!isReset && localStorage.getItem('olympicCountdownMode')) || "summer";
-    const storedYear = !isReset && localStorage.getItem('olympicCountdownYear');
-
-    if (storedYear && eventsData[mode.value][storedYear]) {
-      currentYearKey.value = storedYear;
-    } else {
-      autoSelectNearestInMode(mode.value);
-    }
+    localStorage.setItem('olympicCountdownLang', lang.value);
+    localStorage.setItem('olympicCountdownMode', mode.value);
+    localStorage.setItem('olympicCountdownYear', currentYearKey.value);
   }
-
   updateQueryParams();
   updateCountdown();
   timerId = setInterval(updateCountdown, 1000);
