@@ -2,6 +2,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-05',
+  ignore: ['pages/useFooter.js'],
   ssr: true, // Enabled for OGP pre-rendering on GitHub Pages
   app: {
     baseURL: process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/` : '/',
