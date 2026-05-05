@@ -1,7 +1,5 @@
 <script setup>
-import { useFooter } from '~/composables/useFooter';
-
-const { footerHTML } = useFooter(); // No specific year for 404 page, so it defaults to current year
+// AppFooter will automatically use the current year if no prop is passed.
 </script>
 
 <template>
@@ -11,14 +9,11 @@ const { footerHTML } = useFooter(); // No specific year for 404 page, so it defa
 
     <router-link class="back-btn" to="/">トップページへ戻る</router-link>
 
-    <div class="footer" v-html="footerHTML"></div>
+    <AppFooter />
   </div>
 </template>
 
 <style scoped>
-/* Global styles from the provided HTML snippet */
-/* These styles are typically defined in a global CSS file or app.vue in a Nuxt application. */
-/* They are placed here in a non-scoped style block to directly replicate the provided HTML's appearance for the 404 page. */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 :root {
@@ -104,26 +99,6 @@ a.back-btn:hover {
   transform: translateY(-1px);
   color: #fff;
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-}
-
-.footer {
-  font-size: 0.8rem;
-  color: #4dd0e1;
-  margin-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1rem;
-  opacity: 0.8;
-}
-
-:deep(.footer a) {
-  color: #4ac8e0;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-:deep(.footer a:hover) {
-  color: #fff;
-  text-decoration: underline;
 }
 
 @media (max-width: 480px) {

@@ -14,6 +14,7 @@ type HydrationStrategies = {
 type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {}, {}, { hydrated: () => void }> & T
 
 interface _GlobalComponents {
+  AppFooter: typeof import("../../components/AppFooter.vue")['default']
   Controls: typeof import("../../components/Controls.vue")['default']
   CountdownDisplay: typeof import("../../components/CountdownDisplay.vue")['default']
   NuxtWelcome: typeof import("../../node_modules/nuxt/dist/app/components/welcome.vue")['default']
@@ -39,6 +40,7 @@ interface _GlobalComponents {
   Html: typeof import("../../node_modules/nuxt/dist/head/runtime/components")['Html']
   Body: typeof import("../../node_modules/nuxt/dist/head/runtime/components")['Body']
   NuxtIsland: typeof import("../../node_modules/nuxt/dist/app/components/nuxt-island")['default']
+  LazyAppFooter: LazyComponent<typeof import("../../components/AppFooter.vue")['default']>
   LazyControls: LazyComponent<typeof import("../../components/Controls.vue")['default']>
   LazyCountdownDisplay: LazyComponent<typeof import("../../components/CountdownDisplay.vue")['default']>
   LazyNuxtWelcome: LazyComponent<typeof import("../../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
