@@ -1,0 +1,106 @@
+/**
+ * Cloudflare Pages Function
+ * Handles dynamic OGP injection based on URL path and query parameters.
+ */
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const response = await env.ASSETS.fetch(request);
+
+  // HTML以外、またはサブディレクトリ内のファイルなどはそのまま返す
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/html")) return response;
+  
+  // ルートまたはパスベースのアクセス（/2024/ja など）を処理
+  const isRoot = url.pathname === "/" || url.pathname.endsWith("/index.html");
+  const pathParts = url.pathname.split("/").filter(Boolean);
+  const isPathBased = pathParts.length >= 1 && /^\d{4}$/.test(pathParts[0]);
+  
+  if (!isRoot && !isPathBased) return response;
+
+  // --- Data Definition (Synced with index.vue) ---
+  const events = {
+    summer: {
+      2020: { ja: "東京", en: "Tokyo" },
+      2024: { ja: "パリ", en: "Paris" },
+      2028: { ja: "ロサンゼルス", en: "Los Angeles" },
+      2032: { ja: "ブリスベン", en: "Brisbane" }
+    },
+    winter: {
+      2022: { ja: "北京", en: "Beijing" },
+      2026: { ja: "ミラノ・コルティナ", en: "Milan-Cortina" },
+      2030: { ja: "フレンチアルプス", en: "French Alps" },
+      2034: { ja: "ソルトレイクシティ", en: "Salt Lake City" }
+    }
+  };
+
+  // --- Parsing Year and Language ---
+  let year = url.searchParams.get("year");
+  let lang = url.searchParams.get("lang");
+
+  if (!year && pathParts.length >= 1) {
+    if (/^\d{4}$/.test(pathParts[0])) {
+      year = pathParts[0];
+      if (!lang && pathParts.length >= 2) lang = pathParts[1];
+    }
+  }
+
+  // Defaults
+  lang = (lang === "en" || lang === "ja") ? lang : "ja";
+  year = year || "2024";
+
+  // Determine Mode and City
+  const isWinter = !!events.winter[year];
+  const mode = isWinter ? "winter" : "summer";
+  const city = isWinter ? events.winter[year]?.[lang] : events.summer[year]?.[lang];
+
+  if (!city) return response;
+
+  // --- Meta Content Generation ---
+  const season = lang === "ja" ? (mode === "summer" ? "夏季" : "冬季") : (mode === "summer" ? "Summer" : "Winter");
+  const locale = lang === "ja" ? "ja_JP" : "en_US";
+
+  const title = (lang === "ja")
+    ? `${year} ${city} ${season}オリンピック カウントダウン`
+    : `${year} ${city} ${season} Olympics Countdown`;
+
+  const description = (lang === "ja")
+    ? `${year} ${city} ${season}オリンピックまでのカウントダウンだよ！開催中・終了後の経過時間もリアルタイムで表示。`
+    : `${year} ${city} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
+
+  // URL Construction
+  const canonicalUrl = `${url.origin}${url.pathname}?year=${year}&lang=${lang}`;
+  
+  // OGP Image Processing
+  const ogDomainParam = (url.searchParams.get("ogDomain") || "").trim();
+  const createPath = (url.searchParams.get("createPath") || "").trim();
+  const ogDomain = /^https?:\/\//.test(ogDomainParam) ? ogDomainParam.replace(/\/$/, "") : url.origin;
+  
+  let ogImageUrl = `${url.origin}/icon.png`;
+  if (createPath) {
+    const base = /^https?:\/\//.test(createPath) 
+      ? createPath 
+      : `${ogDomain}${createPath.startsWith("/") ? "" : "/"}${createPath}`;
+    
+    const imgUrl = new URL(base);
+    imgUrl.searchParams.set("year", year);
+    imgUrl.searchParams.set("lang", lang);
+    ogImageUrl = imgUrl.toString();
+  }
+
+  // --- HTML Rewriting ---
+  return new HTMLRewriter()
+    .on("title", { element(el) { el.setInnerContent(title); } })
+    .on('meta[name="description"]', { element(el) { el.setAttribute("content", description); } })
+    .on('meta[property="og:title"]', { element(el) { el.setAttribute("content", title); } })
+    .on('meta[property="og:description"]', { element(el) { el.setAttribute("content", description); } })
+    .on('meta[property="og:locale"]', { element(el) { el.setAttribute("content", locale); } })
+    .on('meta[property="og:url"]', { element(el) { el.setAttribute("content", canonicalUrl); } })
+    .on('meta[name="twitter:title"]', { element(el) { el.setAttribute("content", title); } })
+    .on('meta[name="twitter:description"]', { element(el) { el.setAttribute("content", description); } })
+    .on('meta[name="twitter:url"]', { element(el) { el.setAttribute("content", canonicalUrl); } })
+    .on('meta[property="og:image"]', { element(el) { el.setAttribute("content", ogImageUrl); } })
+    .on('meta[name="twitter:image"]', { element(el) { el.setAttribute("content", ogImageUrl); } })
+    .transform(response);
+
+}
