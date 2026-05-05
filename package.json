@@ -20,6 +20,7 @@
     "typescript": "^5.4.5"
   },
   "overrides": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "commander": "^13.1.0"
   }
 }
