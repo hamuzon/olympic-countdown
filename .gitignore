@@ -1,12 +1,10 @@
-# Nuxt dev/build outputs
-.nuxt
-.output
-.nitro
-.cache
-dist
-
-# Node dependencies
-node_modules
+# Nuxt.js / Node.js
+node_modules/
+.nuxt/
+.output/
+dist/
+.cache/
+.temp/
 
 # Logs
 logs
@@ -14,21 +12,27 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # Environment variables
 .env
 .env.*
 !.env.example
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDEs / Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Testing
+/coverage
+
+# Local runtime files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
