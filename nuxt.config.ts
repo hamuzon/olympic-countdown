@@ -3,8 +3,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   ignore: [
-    'pages/index.vue',
-    'pages/useFooter.js' // composablesに移動できない場合のみ必要
+    'pages/index.vue'
   ],
   ssr: true, // Enabled for OGP pre-rendering on GitHub Pages
   experimental: {
