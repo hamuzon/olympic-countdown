@@ -51,86 +51,51 @@ const findNearestFutureEvent = () => {
  * Helper to extract state from URL or fallback
  */
 const getInitialState = () => {
-  let qYear = route.query.year;
-  let qLang = route.query.lang;
-  const qCP = route.query.createPath;
+  const q = route.query;
+  let resYear = q.year;
+  let resLang = q.lang;
+  let resMode = 'summer';
 
-  // createPathパラメータから情報を抽出（?createPath=/2028/en など）
-  if (!qYear && qCP) {
-    const pathOnly = String(qCP).split('?')[0];
-    const parts = pathOnly.split('/').filter(Boolean);
-    const yMatch = parts.find(p => /^\d{4}$/.test(p));
-    if (yMatch) {
-      qYear = yMatch;
-      const lMatch = parts.find(p => p === 'ja' || p === 'en');
-      if (lMatch && !qLang) qLang = lMatch;
+  // 1. Path Parsing (createPath or Direct Path) - Regex for performance
+  const targetPath = q.createPath ? String(q.createPath) : route.path;
+  if (!resYear) {
+    const match = targetPath.match(/\/(\d{4})(?:\/(ja|en))?/);
+    if (match) {
+      resYear = match[1];
+      if (!resLang) resLang = match[2];
     }
   }
 
-  const cleanPath = route.path.replace(config.app.baseURL, '').replace(/^\//, '');
-  const pathParts = cleanPath.split('/').filter(Boolean);
-  
-  if (!qYear && pathParts.length >= 1 && /^\d{4}$/.test(pathParts[0])) {
-    qYear = pathParts[0]; // Example: /2024/en
-    if (!qLang && pathParts.length >= 2) {
-      qLang = pathParts[1];
-    }
-  }
-
-  let finalLang = (qLang === 'en' || qLang === 'ja') ? qLang : 'ja';
-  let finalYear = qYear;
-  let finalMode = 'summer'; // Default mode, will be refined
-
-  // Client-side: Prioritize localStorage if available and not overridden by URL
-  // This ensures the initial render on the client reflects user's last choice,
-  // reducing flicker if localStorage differs from URL/default.
+  // 2. Client-side LocalStorage Fallback
   if (import.meta.client) {
-    const isReset = ["reset", "reboot", "restart"].some(k => 
-      ["1", "on"].includes(String(route.query[k]).toLowerCase())
-    );
-
-    if (!isReset) {
-      // URLに指定がない場合のみlocalStorageを参照して高速化
-      if (!qLang) {
-        const storedLang = localStorage.getItem('olympicCountdownLang');
-        if (storedLang && (storedLang === 'en' || storedLang === 'ja')) finalLang = storedLang;
-      }
-
-      if (!qYear) {
-        const storedMode = localStorage.getItem('olympicCountdownMode');
-        const storedYear = localStorage.getItem('olympicCountdownYear');
-        if (storedYear && storedMode && eventsData[storedMode]?.[storedYear]) {
-          finalYear = storedYear;
-          finalMode = storedMode;
+    const reset = /^(1|on)$/i.test(String(q.reset || q.reboot || q.restart));
+    if (!reset) {
+      if (!resLang) resLang = localStorage.getItem('olympicCountdownLang');
+      if (!resYear) {
+        const sYear = localStorage.getItem('olympicCountdownYear');
+        const sMode = localStorage.getItem('olympicCountdownMode');
+        if (sYear && sMode && eventsData[sMode]?.[sYear]) {
+          resYear = sYear;
+          resMode = sMode;
         }
       }
     }
   }
 
-  // Determine mode based on finalYear, if it's already set (from URL or localStorage)
-  if (finalYear) {
-    if (eventsData.winter[finalYear]) {
-      finalMode = 'winter';
-    } else if (eventsData.summer[finalYear]) {
-      finalMode = 'summer';
-    } else {
-      // If finalYear is invalid (e.g., from URL but not in eventsData), reset it
-      finalYear = null;
-    }
+  // 3. Validation & Defaults
+  resLang = (resLang === 'en' || resLang === 'ja') ? resLang : 'ja';
+  if (resYear) {
+    if (eventsData.winter[resYear]) resMode = 'winter';
+    else if (eventsData.summer[resYear]) resMode = 'summer';
+    else resYear = null; // Invalid year check
   }
 
-  // If finalYear is still null (e.g., invalid URL year, no valid localStorage year, no URL year), find nearest future
-  if (!finalYear) {
-    finalYear = findNearestFutureEvent();
-    // Determine mode for the auto-selected year
-    if (eventsData.winter[finalYear]) {
-      finalMode = 'winter';
-    } else if (eventsData.summer[finalYear]) {
-      finalMode = 'summer';
-    }
+  if (!resYear) {
+    resYear = findNearestFutureEvent();
+    resMode = eventsData.winter[resYear] ? 'winter' : 'summer';
   }
 
-  return { lang: finalLang, mode: finalMode, year: finalYear };
+  return { lang: resLang, mode: resMode, year: resYear };
 };
 
 const initialState = getInitialState();
@@ -293,14 +258,17 @@ function changeYear(event) {
 
 function updateQueryParams() {
   if (!import.meta.client) return;
-  const query = { ...route.query };
-  
-  // 既にURLが正しい場合はreplaceをスキップして「もっさり感」を解消
-  if (query.year === String(currentYearKey.value) && query.lang === lang.value) return;
+  const q = { ...route.query };
+  const targetYear = String(currentYearKey.value);
+  const targetLang = lang.value;
 
-  if (currentYearKey.value) query.year = currentYearKey.value;
-  query.lang = lang.value;
-  router.replace({ query, hash: route.hash });
+  // すでにURLが期待通りであれば処理をスキップ（高速化と不要な履歴生成防止）
+  if (q.year === targetYear && q.lang === targetLang && !q.createPath) return;
+
+  const newQuery = { ...q, year: targetYear, lang: targetLang };
+  delete newQuery.createPath; // createPath を削除してクリーンアップ
+  
+  router.replace({ query: newQuery, hash: route.hash });
 }
 
 /**
@@ -394,15 +362,12 @@ const footerHTML = computed(() => {
 
 // --- Lifecycle ---
 onMounted(() => {
-  // Save current state to localStorage on client-side
-  // The initial state is now determined by getInitialState, which includes localStorage on client.
   if (import.meta.client) {
     localStorage.setItem('olympicCountdownLang', lang.value);
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
-  }
-  // 初期表示時の不要なURL書き換えを抑制
-  if (route.query.createPath) {
+
+    // URLの正規化を実行（createPathのクリーンアップ含む）
     updateQueryParams();
   }
   updateCountdown();
