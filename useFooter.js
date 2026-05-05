@@ -1,10 +1,8 @@
 import { computed, unref } from 'vue';
-import { useRequestURL } from '#app';
 
 /**
  * フッターのHTML文字列を生成するComposable
- * @param {Ref<string> | string | number} [currentYearRef] - 現在表示されている年 (オプション)。指定しない場合は現在の年を使用。
- * @returns {{ footerHTML: ComputedRef<string> }}
+ * @param {MaybeRef<string | number>} [currentYearRef] - 現在表示されている年
  */
 export function useFooter(currentYearRef) {
   const requestUrl = useRequestURL();
@@ -21,11 +19,9 @@ export function useFooter(currentYearRef) {
       yearStr = `${dynamicCurrentYear}–${baseYear}`;
     }
     
-    if(host.includes("hamuzon.github.io")){
+    if (host.includes("hamuzon.github.io") || host.includes("hamuzon-jp.f5.si")) {
       return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
-    } else if (host.includes("hamuzon-jp.f5.si")) {
-      return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
-    } else if(host.includes("hamusata.f5.si")){
+    } else if (host.includes("hamusata.f5.si")) {
       return `&copy; ${yearStr} <a href="https://hamusata.f5.si" target="_blank">@hamusata</a>`;
     } else {
       return `&copy; ${yearStr} Olympic Countdown`;
