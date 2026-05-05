@@ -186,9 +186,9 @@ watchEffect(() => {
   const origin = typeof window !== 'undefined' 
     ? window.location.origin 
     : (process.env.GITHUB_REPOSITORY ? `https://${process.env.GITHUB_REPOSITORY.split('/')[0]}.github.io` : '');
-  
+
   const fullBaseURL = (origin + config.app.baseURL).replace(/\/$/, '');
-  const canonicalUrl = `${fullBaseURL}${route.path}?year=${currentYearKey.value}&lang=${lang.value}`;
+  const canonicalUrl = `${fullBaseURL}/?year=${currentYearKey.value}&lang=${lang.value}`;
   
   /**
    * Sync Head with Reactive Meta
