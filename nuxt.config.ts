@@ -9,24 +9,18 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'ja'
       },
-      title: 'Olympic Countdown / オリンピック関連カウントダウン',
+      title: 'Olympic Countdown',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { key: 'description', name: 'description', content: '夏季・冬季オリンピックの開催まで、開催期間中、終了後の経過時間をリアルタイムで表示するカウントダウンタイマーです。' },
         { name: 'keywords', content: 'オリンピック, カウントダウン, 五輪, Olympic, Countdown, 2026, 2028, 夏季, 冬季' },
         { name: 'author', content: 'hamuzon' },
-        { key: 'og:title', property: 'og:title', content: 'Olympic Countdown / オリンピック関連カウントダウン' },
         { key: 'og:description', property: 'og:description', content: '夏季・冬季オリンピックの開催まで、開催期間中、終了後の経過時間をリアルタイムで表示するカウントダウンタイマーです。' },
         { property: 'og:type', content: 'website' },
-        { key: 'og:url', property: 'og:url', content: '' },
         { key: 'og:locale', property: 'og:locale', content: 'ja_JP' },
         { name: 'twitter:card', content: 'summary' },
-        { key: 'twitter:title', name: 'twitter:title', content: 'Olympic Countdown / オリンピック関連カウントダウン' },
         { key: 'twitter:description', name: 'twitter:description', content: '夏季・冬季オリンピックの開催まで、開催期間中、終了後の経過時間をリアルタイムで表示するカウントダウンタイマーです。' },
-        { key: 'twitter:url', name: 'twitter:url', content: '' },
-        { key: 'og:image', property: 'og:image', content: '/icon.png' },
-        { key: 'twitter:image', name: 'twitter:image', content: '/icon.png' }
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },

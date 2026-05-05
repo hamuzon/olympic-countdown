@@ -38,6 +38,18 @@ const CONFIG = {
 const getInitialState = () => {
   let qYear = route.query.year;
   let qLang = route.query.lang;
+  const qCP = route.query.createPath;
+
+  // createPathパラメータから情報を抽出（?createPath=/2028/en など）
+  if (!qYear && qCP) {
+    const parts = String(qCP).split('/').filter(Boolean);
+    const yMatch = parts.find(p => /^\d{4}$/.test(p));
+    if (yMatch) {
+      qYear = yMatch;
+      const lMatch = parts.find(p => p === 'ja' || p === 'en');
+      if (lMatch && !qLang) qLang = lMatch;
+    }
+  }
 
   const cleanPath = route.path.replace(config.app.baseURL, '').replace(/^\//, '');
   const pathParts = cleanPath.split('/').filter(Boolean);
