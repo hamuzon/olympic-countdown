@@ -333,13 +333,12 @@ const noticeText = computed(() => {
     : "Note: Countdown is for reference only and may differ from actual start times.";
 });
 
-// --- Lifecycle & URL Logic ---
+// --- Lifecycle ---
 onMounted(() => {
   if (import.meta.client) {
     localStorage.setItem('olympicCountdownLang', lang.value);
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
-
     // URLの正規化を実行（createPathのクリーンアップ含む）
     updateQueryParams();
   }

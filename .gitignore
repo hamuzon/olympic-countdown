@@ -1,6 +1,6 @@
 # Nuxt.js / Node.js
 node_modules/
-.nuxt/
+# .nuxt/
 .output/
 dist/
 .cache/

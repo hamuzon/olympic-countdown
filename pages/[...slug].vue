@@ -1,5 +1,4 @@
 <script setup>
-// AppFooter will automatically use the current year if no prop is passed.
 </script>
 
 <template>
