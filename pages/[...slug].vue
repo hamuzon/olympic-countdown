@@ -173,6 +173,11 @@ function toggleLang() {
   updateQueryParams();
 }
 
+const eventTitleDisplay = computed(() => {
+  const data = eventsData[mode.value]?.[currentYearKey.value];
+  return data ? `${currentYearKey.value} ${data.city[lang.value]}` : 'Loading...';
+});
+
 onMounted(() => {
   updateCountdown();
   timerId = setInterval(updateCountdown, 1000);
@@ -185,7 +190,7 @@ onUnmounted(() => clearInterval(timerId));
 <template>
   <div class="container">
     <h1>{{ lang === 'ja' ? 'オリンピック カウントダウン' : 'Olympic Countdown' }}</h1>
-    <h2>{{ currentYearKey }} {{ eventsData[mode][currentYearKey].city[lang] }}</h2>
+    <h2>{{ eventTitleDisplay }}</h2>
 
     <Controls :mode="mode" :lang="lang" :config="CONFIG" @setMode="setMode" @toggleLang="toggleLang" />
 
