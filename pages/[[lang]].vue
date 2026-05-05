@@ -169,7 +169,8 @@ const seoData = computed(() => {
   if (!currentYearKey.value || !eventsData[mode.value]?.[currentYearKey.value]) return null;
   
   const isJa = lang.value === "ja";
-  const data = eventsData[mode.value][currentYearKey.value];
+  const data = eventsData[mode.value]?.[currentYearKey.value];
+  if (!data) return null;
   const cityName = data.city[lang.value];
   const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
 
@@ -306,13 +307,14 @@ function updateCountdown() {
 const availableYears = computed(() => {
   return Object.keys(eventsData[mode.value]).map(y => ({
     value: y,
-    label: `${y} ${eventsData[mode.value][y].city[lang.value]}`
+    label: `${y} ${eventsData[mode.value]?.[y]?.city[lang.value] || ''}`
   }));
 });
 
 const eventTitle = computed(() => {
-  if (!currentYearKey.value) return 'Loading...';
-  return `${currentYearKey.value} ${eventsData[mode.value][currentYearKey.value].city[lang.value]}`;
+  const data = eventsData[mode.value]?.[currentYearKey.value];
+  if (!data) return 'Loading...';
+  return `${currentYearKey.value} ${data.city[lang.value]}`;
 });
 
 const noticeText = computed(() => {

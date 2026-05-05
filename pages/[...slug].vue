@@ -29,8 +29,11 @@ const eventsData = {
 const CONFIG = { SUMMER_ENABLED: 1, WINTER_ENABLED: 1 };
 
 const getAllYears = () => [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)].sort((a, b) => Number(a) - Number(b));
-const findNearestFutureEvent = (now = Date.now()) => 
-  getAllYears().find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || getAllYears().at(-1);
+const findNearestFutureEvent = () => {
+  const now = Date.now();
+  const years = getAllYears();
+  return years.find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || years.at(-1);
+};
 
 /**
  * パスパラメータから状態を抽出
@@ -132,39 +135,59 @@ function updateCountdown() {
   }
 }
 
+// --- SEO & OGP ---
+const requestUrl = useRequestURL();
 const seoData = computed(() => {
   const data = eventsData[mode.value]?.[currentYearKey.value];
   if (!data) return null;
   const isJa = lang.value === "ja";
   const cityName = data.city[lang.value];
-  const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : mode.value.charAt(0).toUpperCase() + mode.value.slice(1);
-  return {
-    title: isJa ? `${currentYearKey.value} ${cityName} ${season}五輪 カウントダウン` : `${currentYearKey.value} ${cityName} ${season} Olympics`,
-    description: isJa ? `${cityName}五輪までの時間をリアルタイム表示。` : `Countdown to ${cityName} Olympics.`,
-    url: `https://hamuzon.github.io${config.app.baseURL}${currentYearKey.value}/${lang.value}`.replace(/\/+/g, '/').replace(':/', '://'),
-    locale: isJa ? 'ja_JP' : 'en_US'
-  };
+  const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
+
+  const title = isJa 
+    ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン` 
+    : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;
+  const description = isJa
+    ? `${currentYearKey.value} ${cityName} ${season}オリンピックまでの時間をリアルタイム表示。`
+    : `Countdown to ${currentYearKey.value} ${cityName} ${season} Olympics.`;
+
+  const host = requestUrl.host || 'hamuzon.github.io';
+  const protocol = requestUrl.protocol || 'https:';
+  const baseUrl = `${protocol}//${host}${config.app.baseURL}`.replace(/\/$/, '');
+  const prettyUrl = `${baseUrl}/${currentYearKey.value}/${lang.value}`;
+
+  return { title, description, url: prettyUrl, locale: isJa ? 'ja_JP' : 'en_US' };
 });
 
 useSeoMeta({
   title: () => seoData.value?.title,
   ogTitle: () => seoData.value?.title,
   description: () => seoData.value?.description,
+  ogDescription: () => seoData.value?.description,
   ogUrl: () => seoData.value?.url,
   ogLocale: () => seoData.value?.locale,
+  twitterTitle: () => seoData.value?.title,
+  twitterDescription: () => seoData.value?.description,
   twitterCard: 'summary_large_image',
+});
+
+useHead({
+  link: [{ rel: 'canonical', href: () => seoData.value?.url }]
 });
 
 function updateQueryParams() {
   if (!process.client) return;
-  // URLを /year/lang 形式に統一
-  router.replace(`/${currentYearKey.value}/${lang.value}`);
+  const path = `${config.app.baseURL}${currentYearKey.value}/${lang.value}`.replace(/\/+/g, '/');
+  if (route.path !== path) {
+    router.replace(path);
+  }
 }
 
 function setMode(m) {
   mode.value = m;
   const years = Object.keys(eventsData[m]).sort();
-  currentYearKey.value = years.find(y => new Date(eventsData[m][y].end).getTime() > Date.now()) || years.at(-1);
+  const now = Date.now();
+  currentYearKey.value = years.find(y => new Date(eventsData[m][y].end).getTime() > now) || years.at(-1);
   updateQueryParams();
 }
 
@@ -196,7 +219,7 @@ onUnmounted(() => clearInterval(timerId));
 
     <div class="year-selector">
       <select :value="currentYearKey" @change="e => { currentYearKey = e.target.value; updateQueryParams(); }">
-        <option v-for="y in Object.keys(eventsData[mode])" :key="y" :value="y">
+        <option v-for="y in Object.keys(eventsData[mode] || {})" :key="y" :value="y">
           {{ y }} {{ eventsData[mode][y].city[lang] }}
         </option>
       </select>
