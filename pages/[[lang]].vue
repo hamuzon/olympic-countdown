@@ -217,7 +217,7 @@ function setMode(m) {
   mode.value = m;
   autoSelectNearestInMode(m); // This will update currentYearKey.value
 
-  if (import.meta.client) {
+  if (process.client) {
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
   }
@@ -226,7 +226,7 @@ function setMode(m) {
 
 function toggleLang() {
   lang.value = lang.value === "ja" ? "en" : "ja";
-  if (import.meta.client) {
+  if (process.client) {
     localStorage.setItem('olympicCountdownLang', lang.value);
   }
   updateQueryParams();
@@ -234,14 +234,14 @@ function toggleLang() {
 
 function changeYear(event) {
   currentYearKey.value = event.target.value;
-  if (import.meta.client) {
+  if (process.client) {
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
   }
   updateQueryParams();
 }
 
 function updateQueryParams() {
-  if (!import.meta.client) return;
+  if (!process.client) return;
   const q = { ...route.query };
   const targetYear = String(currentYearKey.value);
   const targetLang = lang.value;
@@ -323,7 +323,7 @@ const noticeText = computed(() => {
 
 // --- Lifecycle ---
 onMounted(() => {
-  if (import.meta.client) {
+  if (process.client) {
     localStorage.setItem('olympicCountdownLang', lang.value);
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);

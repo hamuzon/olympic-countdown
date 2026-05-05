@@ -1,7 +1,10 @@
 // @ts-nocheck
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2026-05-05',
+  compatibilityDate: '2024-04-03',
+  ignore: [
+    'pages/index.vue'
+  ],
   ssr: true, // Enabled for OGP pre-rendering on GitHub Pages
   experimental: {
     appManifest: false
