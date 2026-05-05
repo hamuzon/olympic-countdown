@@ -47,7 +47,11 @@ export async function onRequest(context) {
 
   // Defaults
   lang = (lang === "en" || lang === "ja") ? lang : "ja";
-  year = year || "2024";
+  if (!year) {
+    const currentYear = new Date().getFullYear();
+    const allYears = [...Object.keys(events.summer), ...Object.keys(events.winter)].sort();
+    year = allYears.find(y => parseInt(y) >= currentYear) || allYears[allYears.length - 1];
+  }
 
   // Determine Mode and City
   const isWinter = !!events.winter[year];
@@ -71,23 +75,6 @@ export async function onRequest(context) {
   // URL Construction
   const canonicalUrl = `${url.origin}${url.pathname}?year=${year}&lang=${lang}`;
   
-  // OGP Image Processing
-  const ogDomainParam = (url.searchParams.get("ogDomain") || "").trim();
-  const createPath = (url.searchParams.get("createPath") || "").trim();
-  const ogDomain = /^https?:\/\//.test(ogDomainParam) ? ogDomainParam.replace(/\/$/, "") : url.origin;
-  
-  let ogImageUrl = `${url.origin}/icon.png`;
-  if (createPath) {
-    const base = /^https?:\/\//.test(createPath) 
-      ? createPath 
-      : `${ogDomain}${createPath.startsWith("/") ? "" : "/"}${createPath}`;
-    
-    const imgUrl = new URL(base);
-    imgUrl.searchParams.set("year", year);
-    imgUrl.searchParams.set("lang", lang);
-    ogImageUrl = imgUrl.toString();
-  }
-
   // --- HTML Rewriting ---
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
@@ -99,8 +86,6 @@ export async function onRequest(context) {
     .on('meta[name="twitter:title"]', { element(el) { el.setAttribute("content", title); } })
     .on('meta[name="twitter:description"]', { element(el) { el.setAttribute("content", description); } })
     .on('meta[name="twitter:url"]', { element(el) { el.setAttribute("content", canonicalUrl); } })
-    .on('meta[property="og:image"]', { element(el) { el.setAttribute("content", ogImageUrl); } })
-    .on('meta[name="twitter:image"]', { element(el) { el.setAttribute("content", ogImageUrl); } })
     .transform(response);
 
 }

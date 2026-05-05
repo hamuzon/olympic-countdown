@@ -61,8 +61,10 @@ const getInitialState = () => {
       y = null;
     }
   } else {
-    // Default logic if no year provided
-    y = '2024'; 
+    // Find the nearest future event or the latest one
+    const now = Date.now();
+    const allYears = [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)].sort();
+    y = allYears.find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || allYears[allYears.length - 1];
   }
 
   return { lang: l, mode: m, year: y };
@@ -176,27 +178,6 @@ watchEffect(() => {
   const fullBaseURL = (origin + config.app.baseURL).replace(/\/$/, '');
   const canonicalUrl = `${fullBaseURL}${route.path}?year=${currentYearKey.value}&lang=${lang.value}`;
   
-  // Handling dynamic OGP Images based on 'createPath'
-  const ogDomainParam = String(route.query.ogDomain || '').trim();
-  const createPathParam = String(route.query.createPath || '').trim();
-  const ogDomain = /^https?:\/\//.test(ogDomainParam) ? ogDomainParam.replace(/\/$/, '') : origin;
-  
-  let ogImageUrl = `${fullBaseURL}/icon.png`;
-  if (createPathParam) {
-    const basePath = /^https?:\/\//.test(createPathParam) 
-      ? createPathParam 
-      : `${ogDomain}${createPathParam.startsWith('/') ? '' : '/'}${createPathParam}`;
-    
-    try {
-      const urlObj = new URL(basePath);
-      urlObj.searchParams.set('year', currentYearKey.value);
-      urlObj.searchParams.set('lang', lang.value);
-      ogImageUrl = urlObj.toString();
-    } catch (e) {
-      console.warn("Invalid OGP Image Path:", basePath);
-    }
-  }
-
   /**
    * Sync Head with Reactive Meta
    */
@@ -210,9 +191,7 @@ watchEffect(() => {
       { key: 'og:locale',           property: 'og:locale',      content: isJa ? 'ja_JP' : 'en_US' },
       { key: 'twitter:title',       name: 'twitter:title',      content: title },
       { key: 'twitter:description', name: 'twitter:description', content: description },
-      { key: 'twitter:url',         name: 'twitter:url',        content: canonicalUrl },
-      { key: 'og:image',            property: 'og:image',       content: ogImageUrl },
-      { key: 'twitter:image',       name: 'twitter:image',      content: ogImageUrl }
+      { key: 'twitter:url',         name: 'twitter:url',        content: canonicalUrl }
     ]
   });
 });
