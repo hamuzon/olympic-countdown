@@ -31,22 +31,14 @@ const CONFIG = {
   WINTER_ENABLED: 1
 };
 
+// --- Initialization Logic (Crucial for SEO/SSG) ---
 /**
  * 最も近い未来のイベント、または最新のイベントを特定するヘルパー
  */
-const findNearestFutureEvent = () => {
-  const now = Date.now();
-  const allYears = [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)]
-    .filter(yr => eventsData.summer[yr] || eventsData.winter[yr])
-    .sort((a, b) => Number(a) - Number(b));
+const getAllYears = () => [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)].sort((a, b) => Number(a) - Number(b));
+const findNearestFutureEvent = (now = Date.now()) => 
+  getAllYears().find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || getAllYears().at(-1);
 
-  return allYears.find(yr => {
-    const event = eventsData.summer[yr] || eventsData.winter[yr];
-    return event && new Date(event.end).getTime() > now;
-  }) || allYears[allYears.length - 1];
-};
-
-// --- Initialization Logic (Crucial for SEO/SSG) ---
 /**
  * Helper to extract state from URL or fallback
  */
@@ -56,16 +48,12 @@ const getInitialState = () => {
   let resLang = q.lang;
   let resMode = 'summer';
 
-  // 1. Path/createPath Parsing (High Speed Regex)
-  const targetPath = q.createPath ? String(q.createPath) : route.path;
-  const match = targetPath.match(/\/(\d{4})(?:\/(ja|en))?/);
-  if (match) {
-    resYear = resYear || match[1];
-    resLang = resLang || match[2];
-  }
+  // 1. Nuxt Route Params (using pages/[[year]]/[[lang]].vue structure)
+  resYear = resYear || route.params.year;
+  resLang = resLang || route.params.lang;
 
   // 2. Client-side Fallback (Server-side skips to keep SEO static)
-  if (import.meta.client) {
+  if (process.client) {
     const reset = /^(1|on|true)$/i.test(String(q.reset || q.reboot || q.restart));
     if (!reset) {
       resLang = resLang || localStorage.getItem('olympicCountdownLang');
