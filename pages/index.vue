@@ -57,7 +57,8 @@ const getInitialState = () => {
 
   // createPathパラメータから情報を抽出（?createPath=/2028/en など）
   if (!qYear && qCP) {
-    const parts = String(qCP).split('/').filter(Boolean);
+    const pathOnly = String(qCP).split('?')[0];
+    const parts = pathOnly.split('/').filter(Boolean);
     const yMatch = parts.find(p => /^\d{4}$/.test(p));
     if (yMatch) {
       qYear = yMatch;
@@ -83,25 +84,24 @@ const getInitialState = () => {
   // Client-side: Prioritize localStorage if available and not overridden by URL
   // This ensures the initial render on the client reflects user's last choice,
   // reducing flicker if localStorage differs from URL/default.
-  if (process.client) {
+  if (import.meta.client) {
     const isReset = ["reset", "reboot", "restart"].some(k => 
       ["1", "on"].includes(String(route.query[k]).toLowerCase())
     );
 
     if (!isReset) {
-      const storedLang = localStorage.getItem('olympicCountdownLang');
-      if (storedLang && (storedLang === 'en' || storedLang === 'ja') && !qLang) {
-        finalLang = storedLang; // localStorage overrides default lang if no URL lang
+      // URLに指定がない場合のみlocalStorageを参照して高速化
+      if (!qLang) {
+        const storedLang = localStorage.getItem('olympicCountdownLang');
+        if (storedLang && (storedLang === 'en' || storedLang === 'ja')) finalLang = storedLang;
       }
 
-      const storedMode = localStorage.getItem('olympicCountdownMode');
-      const storedYear = localStorage.getItem('olympicCountdownYear');
-
-      // If no year was found in URL (qYear is null), try localStorage year
-      if (!qYear && storedYear && storedMode) {
-        if (eventsData[storedMode] && eventsData[storedMode][storedYear]) {
+      if (!qYear) {
+        const storedMode = localStorage.getItem('olympicCountdownMode');
+        const storedYear = localStorage.getItem('olympicCountdownYear');
+        if (storedYear && storedMode && eventsData[storedMode]?.[storedYear]) {
           finalYear = storedYear;
-          finalMode = storedMode; // Use stored mode if year is from localStorage
+          finalMode = storedMode;
         }
       }
     }
@@ -217,15 +217,15 @@ function autoSelectNearestInMode(m) { // This function is still used by setMode,
 }
 
 // --- Meta & SEO ---
-watchEffect(() => {
-  if (!currentYearKey.value || !eventsData[mode.value][currentYearKey.value]) return;
+const requestUrl = useRequestURL();
+const seoData = computed(() => {
+  if (!currentYearKey.value || !eventsData[mode.value]?.[currentYearKey.value]) return null;
   
   const isJa = lang.value === "ja";
   const data = eventsData[mode.value][currentYearKey.value];
   const cityName = data.city[lang.value];
   const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
   
-  // Sync Title & Description
   const title = isJa
     ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン`
     : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;
@@ -233,32 +233,31 @@ watchEffect(() => {
     ? `${currentYearKey.value} ${cityName} ${season}オリンピックまでのカウントダウンだよ！開催中・終了後の経過時間もリアルタイムで表示。`
     : `${currentYearKey.value} ${cityName} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
-  // URL Building
-  const origin = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : (process.env.GITHUB_REPOSITORY ? `https://${process.env.GITHUB_REPOSITORY.split('/')[0]}.github.io` : '');
+  // OGP URLをクエリパラメータではなくパス形式に最適化（SEO向上）
+  const baseUrl = new URL(config.app.baseURL, requestUrl.origin).toString().replace(/\/$/, '');
+  const prettyUrl = `${baseUrl}/${currentYearKey.value}/${lang.value}`;
 
-  // Normalize canonical URL
-  const baseWithSlash = config.app.baseURL.endsWith('/') ? config.app.baseURL : config.app.baseURL + '/';
-  const fullBaseURL = (origin + baseWithSlash);
-  const canonicalUrl = `${fullBaseURL}?year=${currentYearKey.value}&lang=${lang.value}`;
-  
-  /**
-   * Sync Head with Reactive Meta
-   */
-  useHead({
-    title: title,
-    meta: [
-      { key: 'description',         name: 'description',        content: description },
-      { key: 'og:title',            property: 'og:title',       content: title },
-      { key: 'og:description',      property: 'og:description', content: description },
-      { key: 'og:url',              property: 'og:url',         content: canonicalUrl },
-      { key: 'og:locale',           property: 'og:locale',      content: isJa ? 'ja_JP' : 'en_US' },
-      { key: 'twitter:title',       name: 'twitter:title',      content: title },
-      { key: 'twitter:description', name: 'twitter:description', content: description },
-      { key: 'twitter:url',         name: 'twitter:url',        content: canonicalUrl }
-    ]
-  });
+  return { 
+    title, description, 
+    url: prettyUrl, 
+    locale: isJa ? 'ja_JP' : 'en_US' 
+  };
+});
+
+useSeoMeta({
+  title: () => seoData.value?.title,
+  ogTitle: () => seoData.value?.title,
+  description: () => seoData.value?.description,
+  ogDescription: () => seoData.value?.description,
+  ogUrl: () => seoData.value?.url || requestUrl.href,
+  ogLocale: () => seoData.value?.locale,
+  twitterTitle: () => seoData.value?.title,
+  twitterDescription: () => seoData.value?.description,
+  twitterCard: 'summary',
+});
+
+useHead({
+  link: [{ rel: 'canonical', href: () => seoData.value?.url }]
 });
 
 // --- Actions ---
@@ -293,10 +292,15 @@ function changeYear(event) {
 }
 
 function updateQueryParams() {
+  if (!import.meta.client) return;
   const query = { ...route.query };
+  
+  // 既にURLが正しい場合はreplaceをスキップして「もっさり感」を解消
+  if (query.year === String(currentYearKey.value) && query.lang === lang.value) return;
+
   if (currentYearKey.value) query.year = currentYearKey.value;
   query.lang = lang.value;
-  router.replace({ query });
+  router.replace({ query, hash: route.hash });
 }
 
 /**
@@ -377,7 +381,7 @@ const footerHTML = computed(() => {
     yearStr = `${currentYear}–${baseYear}`;
   }
   
-  if(hostname === "hamuzon.github.io"){
+  if(hostname.includes("hamuzon.github.io")){
     return `&copy; ${yearStr} <a href="https://hamuzon.github.io" target="_blank">@hamuzon</a>`;
   } else if (hostname.includes("hamuzon-jp.f5.si")) {
     return `&copy; ${yearStr} <a href="https://hamuzon-jp.f5.si" target="_blank">@hamuzon</a>`;
@@ -397,7 +401,10 @@ onMounted(() => {
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
   }
-  updateQueryParams();
+  // 初期表示時の不要なURL書き換えを抑制
+  if (route.query.createPath) {
+    updateQueryParams();
+  }
   updateCountdown();
   timerId = setInterval(updateCountdown, 1000);
 });
@@ -422,7 +429,13 @@ onUnmounted(() => {
     />
 
     <div class="year-selector">
-      <select :value="currentYearKey" @change="changeYear" aria-label="Year">
+      <select 
+        id="year-select" 
+        name="year" 
+        :value="currentYearKey" 
+        @change="changeYear" 
+        aria-label="Year"
+      >
         <option v-for="y in availableYears" :key="y.value" :value="y.value">
           {{ y.label }}
         </option>
