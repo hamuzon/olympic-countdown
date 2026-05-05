@@ -31,6 +31,21 @@ const CONFIG = {
   WINTER_ENABLED: 1
 };
 
+/**
+ * 最も近い未来のイベント、または最新のイベントを特定するヘルパー
+ */
+const findNearestFutureEvent = () => {
+  const now = Date.now();
+  const allYears = [...Object.keys(eventsData.summer), ...Object.keys(eventsData.winter)]
+    .filter(yr => eventsData.summer[yr] || eventsData.winter[yr])
+    .sort((a, b) => Number(a) - Number(b));
+
+  return allYears.find(yr => {
+    const event = eventsData.summer[yr] || eventsData.winter[yr];
+    return event && new Date(event.end).getTime() > now;
+  }) || allYears[allYears.length - 1];
+};
+
 // --- Initialization Logic (Crucial for SEO/SSG) ---
 /**
  * Helper to extract state from URL or fallback
