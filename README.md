@@ -4,6 +4,8 @@ Olympic Countdown Code
 
 URL
 
-[hamuzon.github.io/olympic/](https://hamuzon.github.io/olympic/)
+[hamuzon.github.io/olympic-countdown/](https://hamuzon.github.io/olympic-countdown/)
 
-[olympic.hamusata.f5.si](https://olympic.hamusata.f5.si/)
+[olympic-countdown.hamusata.f5.si](https://olympic-countdown.hamusata.f5.si/)
+
+[olympic-countdown.hamuzon-jp.f5.si](https://olympic-countdown.hamuzon-jp.f5.si/)
