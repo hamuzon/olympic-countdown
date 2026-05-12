@@ -6,27 +6,45 @@ const normalizeParam = (value: unknown): string => {
 };
 
 const parseCreatePath = (value: string) => {
-  const parts = value.split("/").filter(Boolean);
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    decoded = value;
+  }
+  const parts = decoded.split("/").filter(Boolean);
   return {
     year: parts.find((p) => /^\d{4}$/.test(p)) || "",
     lang: parts.find((p) => p === "ja" || p === "en") || "",
   };
 };
 
+const buildCanonicalPath = (baseURL: string, year: string, lang: string) => {
+  const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+  const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
+  return `${basePrefix}/${year}/${lang}`;
+};
+
 export default defineNuxtRouteMiddleware((to) => {
   if (URL_SETTINGS.urlScheme !== "path") return;
 
-  const year = normalizeParam(to.query.year);
-  const langRaw = normalizeParam(to.query.lang);
+  const runtimeConfig = useRuntimeConfig();
+  const baseURL = String(runtimeConfig.app?.baseURL || "/");
+
   const cp =
     normalizeParam(to.query.createPath) ||
     normalizeParam(to.query.createpath) ||
     normalizeParam(to.query.clearPath) ||
     normalizeParam(to.query.clearpath);
+  const fromCp = cp ? parseCreatePath(cp) : { year: "", lang: "" };
 
-  const fromCp = cp ? parseCreatePath(decodeURIComponent(cp)) : { year: "", lang: "" };
-  const targetYear = year || fromCp.year;
-  const targetLang = langRaw === "en" || langRaw === "ja" ? langRaw : fromCp.lang || "ja";
+  const yearFromQuery = normalizeParam(to.query.year);
+  const langFromQuery = normalizeParam(to.query.lang);
+
+  // createPath を優先し、無い場合のみ year/lang クエリを使う
+  const targetYear = fromCp.year || yearFromQuery;
+  const rawTargetLang = fromCp.lang || langFromQuery;
+  const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";
 
   if (!targetYear) return;
 
@@ -38,16 +56,21 @@ export default defineNuxtRouteMiddleware((to) => {
   delete cleanedQuery.clearPath;
   delete cleanedQuery.clearpath;
 
-  const targetPath = `/${targetYear}/${targetLang}`;
-  const noLegacy =
-    !to.query.year &&
-    !to.query.lang &&
-    !to.query.createPath &&
-    !to.query.createpath &&
-    !to.query.clearPath &&
-    !to.query.clearpath;
+  const targetPath = buildCanonicalPath(baseURL, targetYear, targetLang);
 
-  if (to.path === targetPath && noLegacy) return;
+  const hasLegacyHints = Boolean(
+    to.query.year ||
+      to.query.lang ||
+      to.query.createPath ||
+      to.query.createpath ||
+      to.query.clearPath ||
+      to.query.clearpath,
+  );
 
-  return navigateTo({ path: targetPath, query: cleanedQuery, hash: to.hash }, { replace: true, redirectCode: 301 });
+  if (to.path === targetPath && !hasLegacyHints) return;
+
+  return navigateTo(
+    { path: targetPath, query: cleanedQuery, hash: to.hash },
+    { replace: true, redirectCode: 301 },
+  );
 });
