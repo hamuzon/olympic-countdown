@@ -96,6 +96,11 @@ const parseCreatePath = (value) => {
   };
 };
 
+const normalizeParam = (value) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
+};
+
 /**
  * Helper to extract state from URL or fallback
  */
@@ -104,8 +109,8 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = q.year || fromCreatePath.year;
-  let resLang = q.lang || fromCreatePath.lang;
+  let resYear = normalizeParam(q.year) || fromCreatePath.year;
+  let resLang = normalizeParam(q.lang) || fromCreatePath.lang;
   let resMode = "summer";
 
   // 1. Nuxt Route Params (using pages/[[year]]/[[lang]].vue structure)
@@ -341,8 +346,7 @@ function syncStateFromQuery() {
 }
 
 function normalizeQueryParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return typeof raw === "string" ? raw.trim() : "";
+  return normalizeParam(value);
 }
 
 function updateQueryParams() {

@@ -96,6 +96,11 @@ const parseCreatePath = (value) => {
   };
 };
 
+const normalizeParam = (value) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
+};
+
 /**
  * Extracts initial state from URL slug/query or local storage.
  */
@@ -105,8 +110,8 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = slug[0] || q.year || fromCreatePath.year; // Path param takes precedence, then query
-  let resLang = slug[1] || q.lang || fromCreatePath.lang; // Path param takes precedence, then query
+  let resYear = normalizeParam(slug[0]) || normalizeParam(q.year) || fromCreatePath.year; // Path param takes precedence, then query
+  let resLang = normalizeParam(slug[1]) || normalizeParam(q.lang) || fromCreatePath.lang; // Path param takes precedence, then query
   let resMode = "summer";
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
@@ -338,8 +343,7 @@ function syncStateFromQuery() {
 }
 
 function normalizeQueryParam(value) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return typeof raw === "string" ? raw.trim() : "";
+  return normalizeParam(value);
 }
 
 function updateQueryParams() {
