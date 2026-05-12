@@ -36,10 +36,14 @@ const getFallbackYear = () => {
   return years[futureIndex >= 0 ? futureIndex : years.length - 1];
 };
 
-const buildCanonicalPath = (baseURL: string, year: string, lang: string) => {
+const buildCanonicalPath = (year: string, lang: string) => `/${year}/${lang}`;
+
+const stripBasePath = (path: string, baseURL: string) => {
   const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
-  const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
-  return `${basePrefix}/${year}/${lang}`;
+  if (!normalizedBase || normalizedBase === "/") return path;
+  if (path === normalizedBase) return "/";
+  if (path.startsWith(`${normalizedBase}/`)) return path.slice(normalizedBase.length);
+  return path;
 };
 
 export default defineNuxtRouteMiddleware((to) => {
@@ -47,7 +51,8 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const runtimeConfig = useRuntimeConfig();
   const baseURL = String(runtimeConfig.app?.baseURL || "/");
-  const pathParts = to.path.split("/").filter(Boolean);
+  const relativePath = stripBasePath(to.path, baseURL);
+  const pathParts = relativePath.split("/").filter(Boolean);
 
   const yearFromPath = pathParts.find((part) => /^\d{4}$/.test(part)) || "";
   const langFromPath = pathParts.find((part) => part === "ja" || part === "en") || "";
@@ -77,7 +82,7 @@ export default defineNuxtRouteMiddleware((to) => {
   delete cleanedQuery.clearPath;
   delete cleanedQuery.clearpath;
 
-  const targetPath = buildCanonicalPath(baseURL, targetYear, targetLang);
+  const targetPath = buildCanonicalPath(targetYear, targetLang);
 
   const hasLegacyHints = Boolean(
     to.query.year ||
@@ -88,7 +93,7 @@ export default defineNuxtRouteMiddleware((to) => {
       to.query.clearpath,
   );
 
-  if (to.path === targetPath && !hasLegacyHints) return;
+  if (relativePath === targetPath && !hasLegacyHints) return;
 
   return navigateTo(
     { path: targetPath, query: cleanedQuery, hash: to.hash },
