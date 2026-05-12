@@ -187,12 +187,10 @@ const seoData = computed(() => {
   const protocol = requestUrl.protocol || 'https:';
   const baseUrl = `${protocol}//${host}${config.app.baseURL}`.replace(/\/$/, '');
   const prettyUrl = `${baseUrl}/${currentYearKey.value}/${lang.value}`;
-  const imageUrl = `${baseUrl}/icon.png`;
 
   return { 
     title, description, 
     url: prettyUrl, 
-    imageUrl,
     locale: isJa ? 'ja_JP' : 'en_US' 
   };
 });
@@ -206,8 +204,6 @@ useSeoMeta({
   ogLocale: () => seoData.value?.locale,
   twitterTitle: () => seoData.value?.title,
   twitterDescription: () => seoData.value?.description,
-  ogImage: () => seoData.value?.imageUrl,
-  twitterImage: () => seoData.value?.imageUrl,
   twitterCard: 'summary_large_image',
 });
 

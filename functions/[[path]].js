@@ -90,8 +90,6 @@ export async function onRequest(context) {
   canonicalUrl.pathname = url.pathname.split('/').filter(p => !/^\d{4}$/.test(p) && p !== 'ja' && p !== 'en').join('/') || '/';
   canonicalUrl.searchParams.set('year', year);
   canonicalUrl.searchParams.set('lang', lang);
-  const imageUrl = `${url.origin}/icon.png`;
-  
   // --- HTML Rewriting ---
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
@@ -102,8 +100,6 @@ export async function onRequest(context) {
     .on('meta[property="og:url"]', { element(el) { el.setAttribute("content", canonicalUrl); } })
     .on('meta[name="twitter:title"]', { element(el) { el.setAttribute("content", title); } })
     .on('meta[name="twitter:description"]', { element(el) { el.setAttribute("content", description); } })
-    .on('meta[property="og:image"]', { element(el) { el.setAttribute("content", imageUrl); } })
-    .on('meta[name="twitter:image"]', { element(el) { el.setAttribute("content", imageUrl); } })
     .on('meta[name="twitter:url"]', { element(el) { el.setAttribute("content", canonicalUrl); } })
     .transform(response);
 
