@@ -239,6 +239,7 @@ function autoSelectNearestInMode(m) {
 function toggleLang() {
   lang.value = lang.value === "ja" ? "en" : "ja";
   if (process.client) {
+    syncStateFromQuery();
     localStorage.setItem('olympicCountdownLang', lang.value);
   }
   updateQueryParams();
@@ -250,6 +251,27 @@ function changeYear(event) {
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
   }
   updateQueryParams();
+}
+
+
+function syncStateFromQuery() {
+  const q = route.query;
+  const createPathValue = q.createPath || q.createpath || q.clearPath || q.clearpath;
+  const fromCreatePath = parseCreatePath(createPathValue);
+  const requestedYear = String(q.year || fromCreatePath.year || '').trim();
+  const requestedLang = q.lang || fromCreatePath.lang;
+
+  if (requestedLang === 'ja' || requestedLang === 'en') {
+    lang.value = requestedLang;
+  }
+
+  if (eventsData.winter[requestedYear]) {
+    mode.value = 'winter';
+    currentYearKey.value = requestedYear;
+  } else if (eventsData.summer[requestedYear]) {
+    mode.value = 'summer';
+    currentYearKey.value = requestedYear;
+  }
 }
 
 function updateQueryParams() {
@@ -340,6 +362,7 @@ const noticeText = computed(() => {
 // --- Lifecycle ---
 onMounted(() => {
   if (process.client) {
+    syncStateFromQuery();
     localStorage.setItem('olympicCountdownLang', lang.value);
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
