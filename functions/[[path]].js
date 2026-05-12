@@ -2,6 +2,18 @@
  * Cloudflare Pages Function
  * Handles dynamic OGP injection based on URL path and query parameters.
  */
+
+const parseCreatePath = (value) => {
+  if (!value) return {};
+  let decoded = value;
+  try { decoded = decodeURIComponent(String(value)); } catch {}
+  const parts = decoded.split('/').filter(Boolean);
+  return {
+    year: parts.find(p => /^\d{4}$/.test(p)),
+    lang: parts.find(p => p === 'ja' || p === 'en')
+  };
+};
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -37,17 +49,10 @@ export async function onRequest(context) {
   let lang = url.searchParams.get("lang");
   const qCP = url.searchParams.get("createPath") || url.searchParams.get("createpath") || url.searchParams.get("clearPath") || url.searchParams.get("clearpath");
 
-  // createPathからの抽出ロジックを追加
   if (!year && qCP) {
-    let decoded = qCP;
-    try { decoded = decodeURIComponent(qCP); } catch {}
-    const parts = decoded.split("/").filter(Boolean);
-    const yMatch = parts.find(p => /^\d{4}$/.test(p));
-    if (yMatch) {
-      year = yMatch;
-      const lMatch = parts.find(p => p === "ja" || p === "en");
-      if (lMatch && !lang) lang = lMatch;
-    }
+    const fromCreatePath = parseCreatePath(qCP);
+    if (fromCreatePath.year) year = fromCreatePath.year;
+    if (!lang && fromCreatePath.lang) lang = fromCreatePath.lang;
   }
 
   // パス（/2024/en など）からの抽出
@@ -84,12 +89,16 @@ export async function onRequest(context) {
     ? `${year} ${city} ${season}オリンピックまでのカウントダウンだよ！開催中・終了後の経過時間もリアルタイムで表示。`
     : `${year} ${city} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
-  // URL Construction (Normalize to query-based URL for OGP consistency regardless of path)
-  // /2024/ja や /?year=2024 などを、常に標準的なクエリ形式のURLとしてOGPに設定
+  // OGP URL形式は env.OG_URL_SCHEME で切替可能 ('path' | 'query')
+  const ogUrlScheme = (env.OG_URL_SCHEME || 'path').toLowerCase();
   const canonicalUrl = new URL(url.origin);
-  canonicalUrl.pathname = url.pathname.split('/').filter(p => !/^\d{4}$/.test(p) && p !== 'ja' && p !== 'en').join('/') || '/';
-  canonicalUrl.searchParams.set('year', year);
-  canonicalUrl.searchParams.set('lang', lang);
+  if (ogUrlScheme === 'query') {
+    canonicalUrl.pathname = url.pathname.split('/').filter(p => !/^\d{4}$/.test(p) && p !== 'ja' && p !== 'en').join('/') || '/';
+    canonicalUrl.searchParams.set('year', year);
+    canonicalUrl.searchParams.set('lang', lang);
+  } else {
+    canonicalUrl.pathname = `/${year}/${lang}`;
+  }
   // --- HTML Rewriting ---
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })

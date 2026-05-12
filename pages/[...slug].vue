@@ -28,7 +28,8 @@ const eventsData = {
 
 const CONFIG = {
   SUMMER_ENABLED: 1,
-  WINTER_ENABLED: 1
+  WINTER_ENABLED: 1,
+  URL_SCHEME: 'path' // 'path' | 'query' (createPath/clearPath 系からの切替を簡単化)
 };
 
 // --- Initialization Logic (Crucial for SEO/SSG) ---
@@ -280,16 +281,24 @@ function updateQueryParams() {
   const targetYear = String(currentYearKey.value);
   const targetLang = lang.value;
 
-  // すでにURLが期待通りであれば処理をスキップ（高速化と不要な履歴生成防止）
-  if (q.year === targetYear && q.lang === targetLang && !q.createPath && !q.createpath && !q.clearPath && !q.clearpath) return;
+  const cleanedQuery = { ...q };
+  delete cleanedQuery.createPath;
+  delete cleanedQuery.createpath;
+  delete cleanedQuery.clearPath;
+  delete cleanedQuery.clearpath;
 
-  const newQuery = { ...q, year: targetYear, lang: targetLang };
-  delete newQuery.createPath;
-  delete newQuery.createpath;
-  delete newQuery.clearPath;
-  delete newQuery.clearpath; // createPath系クエリを削除してクリーンアップ
-  
-  router.replace({ query: newQuery, hash: route.hash });
+  if (CONFIG.URL_SCHEME === 'path') {
+    const targetPath = `/${targetYear}/${targetLang}`;
+    if (route.path === targetPath && !cleanedQuery.year && !cleanedQuery.lang) return;
+    delete cleanedQuery.year;
+    delete cleanedQuery.lang;
+    router.replace({ path: targetPath, query: cleanedQuery, hash: route.hash });
+    return;
+  }
+
+  // query方式を使う場合（旧 createPath/clearPath 方式からの移行を含む）
+  if (q.year === targetYear && q.lang === targetLang && !q.createPath && !q.createpath && !q.clearPath && !q.clearpath) return;
+  router.replace({ query: { ...cleanedQuery, year: targetYear, lang: targetLang }, hash: route.hash });
 }
 
 /**
