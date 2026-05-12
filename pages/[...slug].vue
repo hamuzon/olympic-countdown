@@ -11,6 +11,26 @@ const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
 
+function validateRouteOrThrow() {
+  const pathParts = route.path.split("/").filter(Boolean);
+  const hasYearInPath = pathParts.some((part) => /^\d{4}$/.test(part));
+  const isLangOnlyPath = pathParts.length === 1 && (pathParts[0] === "ja" || pathParts[0] === "en");
+  const hasLegacyHints = Boolean(
+    route.query.year ||
+      route.query.lang ||
+      route.query.createPath ||
+      route.query.createpath ||
+      route.query.clearPath ||
+      route.query.clearpath,
+  );
+
+  if (pathParts.length > 0 && !hasYearInPath && !isLangOnlyPath && !hasLegacyHints) {
+    throw createError({ statusCode: 404, statusMessage: "Page Not Found" });
+  }
+}
+
+validateRouteOrThrow();
+
 // --- Static Data ---
 const eventsData = {
   summer: {
