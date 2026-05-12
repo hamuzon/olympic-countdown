@@ -19,6 +19,23 @@ const parseCreatePath = (value: string) => {
   };
 };
 
+const getFallbackYear = () => {
+  const events = [
+    "2021-08-08T22:00:00+09:00",
+    "2022-02-20T22:00:00+08:00",
+    "2024-08-11T23:59:59+02:00",
+    "2026-02-22T23:59:59+01:00",
+    "2028-07-30T23:59:59-07:00",
+    "2030-02-24T23:59:59+01:00",
+    "2032-08-08T23:59:59+10:00",
+    "2034-02-26T23:59:59-07:00",
+  ];
+  const years = ["2020", "2022", "2024", "2026", "2028", "2030", "2032", "2034"];
+  const now = Date.now();
+  const futureIndex = events.findIndex((endAt) => new Date(endAt).getTime() > now);
+  return years[futureIndex >= 0 ? futureIndex : years.length - 1];
+};
+
 const buildCanonicalPath = (baseURL: string, year: string, lang: string) => {
   const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
   const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
@@ -30,6 +47,10 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const runtimeConfig = useRuntimeConfig();
   const baseURL = String(runtimeConfig.app?.baseURL || "/");
+  const pathParts = to.path.split("/").filter(Boolean);
+
+  const yearFromPath = pathParts.find((part) => /^\d{4}$/.test(part)) || "";
+  const langFromPath = pathParts.find((part) => part === "ja" || part === "en") || "";
 
   const cp =
     normalizeParam(to.query.createPath) ||
@@ -41,12 +62,12 @@ export default defineNuxtRouteMiddleware((to) => {
   const yearFromQuery = normalizeParam(to.query.year);
   const langFromQuery = normalizeParam(to.query.lang);
 
-  // createPath を優先し、無い場合のみ year/lang クエリを使う
-  const targetYear = fromCp.year || yearFromQuery;
-  const rawTargetLang = fromCp.lang || langFromQuery;
-  const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";
+  const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
+  if (!shouldCanonicalizePath) return;
 
-  if (!targetYear) return;
+  const targetYear = fromCp.year || yearFromQuery || yearFromPath || getFallbackYear();
+  const rawTargetLang = fromCp.lang || langFromQuery || langFromPath;
+  const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";
 
   const cleanedQuery = { ...to.query } as Record<string, unknown>;
   delete cleanedQuery.year;
