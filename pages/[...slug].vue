@@ -346,6 +346,13 @@ function normalizeQueryParam(value) {
   return normalizeParam(value);
 }
 
+function buildCanonicalPath(year, language) {
+  const baseURL = String(config.app?.baseURL || "/");
+  const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+  const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
+  return `${basePrefix}/${year}/${language}`;
+}
+
 function updateQueryParams() {
   if (!process.client) return;
   const q = { ...route.query };
@@ -359,7 +366,7 @@ function updateQueryParams() {
   delete cleanedQuery.clearpath;
 
   if (CONFIG.URL_SCHEME === "path") {
-    const targetPath = `/${targetYear}/${targetLang}`;
+    const targetPath = buildCanonicalPath(targetYear, targetLang);
     if (route.path === targetPath && !cleanedQuery.year && !cleanedQuery.lang)
       return;
     delete cleanedQuery.year;
