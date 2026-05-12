@@ -1,5 +1,5 @@
 <script setup>
-import { toRef } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
   currentYear: {
@@ -8,7 +8,13 @@ const props = defineProps({
   }
 });
 
-const { footerHTML } = useFooter(toRef(props, 'currentYear'));
+const footerHTML = computed(() => {
+  const year = Number(props.currentYear);
+  if (Number.isFinite(year)) {
+    return `&copy; ${year} Olympic Countdown`;
+  }
+  return '&copy; Olympic Countdown';
+});
 </script>
 
 <template>
