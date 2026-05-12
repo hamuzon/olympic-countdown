@@ -39,14 +39,24 @@ const getAllYears = () => [...Object.keys(eventsData.summer), ...Object.keys(eve
 const findNearestFutureEvent = (now = Date.now()) => 
   getAllYears().find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || getAllYears().at(-1);
 
+const parseCreatePath = (value) => {
+  if (!value) return {};
+  const parts = String(value).split('/').filter(Boolean);
+  return {
+    year: parts.find((part) => /^\d{4}$/.test(part)),
+    lang: parts.find((part) => part === 'ja' || part === 'en')
+  };
+};
+
 /**
  * Extracts initial state from URL slug/query or local storage.
  */
 const getInitialState = () => {
   const slug = route.params.slug || []; // This will be an array like ['2024', 'ja'] or just ['2024']
   const q = route.query;
-  let resYear = slug[0] || q.year; // Path param takes precedence, then query
-  let resLang = slug[1] || q.lang; // Path param takes precedence, then query
+  const fromCreatePath = parseCreatePath(q.createPath);
+  let resYear = slug[0] || q.year || fromCreatePath.year; // Path param takes precedence, then query
+  let resLang = slug[1] || q.lang || fromCreatePath.lang; // Path param takes precedence, then query
   let resMode = 'summer';
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
@@ -156,9 +166,11 @@ const seoData = computed(() => {
   if (!event) return null;
 
   const isJa = lang.value === "ja";
-  const cityName = event.city[lang.value];
-  const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
-
+  const data = event;
+  const cityName = data.city?.[lang.value] || '';
+  const season = isJa
+    ? (mode.value === 'summer' ? '夏季' : '冬季')
+    : (mode.value === 'summer' ? 'Summer' : 'Winter');
   const title = isJa
     ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン`
     : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;

@@ -39,13 +39,23 @@ const getAllYears = () => [...Object.keys(eventsData.summer), ...Object.keys(eve
 const findNearestFutureEvent = (now = Date.now()) => 
   getAllYears().find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || getAllYears().at(-1);
 
+const parseCreatePath = (value) => {
+  if (!value) return {};
+  const parts = String(value).split('/').filter(Boolean);
+  return {
+    year: parts.find((part) => /^\d{4}$/.test(part)),
+    lang: parts.find((part) => part === 'ja' || part === 'en')
+  };
+};
+
 /**
  * Helper to extract state from URL or fallback
  */
 const getInitialState = () => {
   const q = route.query;
-  let resYear = q.year;
-  let resLang = q.lang;
+  const fromCreatePath = parseCreatePath(q.createPath);
+  let resYear = q.year || fromCreatePath.year;
+  let resLang = q.lang || fromCreatePath.lang;
   let resMode = 'summer';
 
   // 1. Nuxt Route Params (using pages/[[year]]/[[lang]].vue structure)
@@ -171,9 +181,10 @@ const seoData = computed(() => {
   const isJa = lang.value === "ja";
   const data = eventsData[mode.value]?.[currentYearKey.value];
   if (!data) return null;
-  const cityName = data.city[lang.value];
-  const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
-
+  const cityName = data.city?.[lang.value] || '';
+  const season = isJa
+    ? (mode.value === 'summer' ? '夏季' : '冬季')
+    : (mode.value === 'summer' ? 'Summer' : 'Winter');
   const title = isJa
     ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン`
     : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;
