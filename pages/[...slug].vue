@@ -321,8 +321,8 @@ function syncStateFromQuery() {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  const requestedYear = String(q.year || fromCreatePath.year || "").trim();
-  const requestedLang = q.lang || fromCreatePath.lang;
+  const requestedYear = normalizeQueryParam(q.year) || String(fromCreatePath.year || "").trim();
+  const requestedLang = normalizeQueryParam(q.lang) || fromCreatePath.lang;
 
   if (requestedLang === "ja" || requestedLang === "en") {
     lang.value = requestedLang;
@@ -335,6 +335,11 @@ function syncStateFromQuery() {
     mode.value = "summer";
     currentYearKey.value = requestedYear;
   }
+}
+
+function normalizeQueryParam(value) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
 }
 
 function updateQueryParams() {
@@ -361,8 +366,8 @@ function updateQueryParams() {
 
   // query方式を使う場合（旧 createPath/clearPath 方式からの移行を含む）
   if (
-    q.year === targetYear &&
-    q.lang === targetLang &&
+    normalizeQueryParam(q.year) === targetYear &&
+    normalizeQueryParam(q.lang) === targetLang &&
     !q.createPath &&
     !q.createpath &&
     !q.clearPath &&
