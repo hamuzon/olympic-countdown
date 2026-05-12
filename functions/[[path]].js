@@ -1,3 +1,5 @@
+import { URL_SETTINGS } from '../url-scheme.config.js';
+
 /**
  * Cloudflare Pages Function
  * Handles dynamic OGP injection based on URL path and query parameters.
@@ -77,6 +79,22 @@ export async function onRequest(context) {
 
   if (!city) return response;
 
+  const canonicalRedirectUrl = new URL(url.origin);
+  if ((URL_SETTINGS.urlScheme || 'path') === 'query') {
+    canonicalRedirectUrl.pathname = '/';
+    canonicalRedirectUrl.searchParams.set('year', year);
+    canonicalRedirectUrl.searchParams.set('lang', lang);
+  } else {
+    canonicalRedirectUrl.pathname = `/${year}/${lang}`;
+  }
+
+  const isLegacyCreatePath = Boolean(qCP);
+  const hasLegacyQueryYearLang = Boolean(url.searchParams.get('year') || url.searchParams.get('lang'));
+  const shouldRedirectToCanonical = isLegacyCreatePath || hasLegacyQueryYearLang;
+  if (shouldRedirectToCanonical && `${url.pathname}${url.search}` !== `${canonicalRedirectUrl.pathname}${canonicalRedirectUrl.search}`) {
+    return Response.redirect(canonicalRedirectUrl.toString(), 301);
+  }
+
   // --- Meta Content Generation ---
   const season = lang === "ja" ? (mode === "summer" ? "夏季" : "冬季") : (mode === "summer" ? "Summer" : "Winter");
   const locale = lang === "ja" ? "ja_JP" : "en_US";
@@ -90,7 +108,7 @@ export async function onRequest(context) {
     : `${year} ${city} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
   // OGP URL形式は env.OG_URL_SCHEME で切替可能 ('path' | 'query')
-  const ogUrlScheme = (env.OG_URL_SCHEME || 'path').toLowerCase();
+  const ogUrlScheme = (env.OG_URL_SCHEME || URL_SETTINGS.ogUrlScheme || URL_SETTINGS.urlScheme || 'path').toLowerCase();
   const canonicalUrl = new URL(url.origin);
   if (ogUrlScheme === 'query') {
     canonicalUrl.pathname = url.pathname.split('/').filter(p => !/^\d{4}$/.test(p) && p !== 'ja' && p !== 'en').join('/') || '/';

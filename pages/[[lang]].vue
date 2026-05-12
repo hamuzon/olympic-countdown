@@ -4,6 +4,7 @@
  * Optimized for SEO (OGP) and performance.
  */
 import { ref, onMounted, onUnmounted, computed, watchEffect } from 'vue';
+import { URL_SETTINGS } from '~/url-scheme.config.js';
 
 // --- Composables ---
 const route = useRoute();
@@ -29,7 +30,7 @@ const eventsData = {
 const CONFIG = {
   SUMMER_ENABLED: 1,
   WINTER_ENABLED: 1,
-  URL_SCHEME: 'path' // 'path' | 'query' (createPath/clearPath 系からの切替を簡単化)
+  URL_SCHEME: URL_SETTINGS.urlScheme // 専用設定ファイルで切替
 };
 
 // --- Initialization Logic (Crucial for SEO/SSG) ---
