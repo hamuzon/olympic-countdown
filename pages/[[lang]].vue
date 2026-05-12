@@ -370,7 +370,15 @@ function updateQueryParams() {
 
   if (CONFIG.URL_SCHEME === "path") {
     const targetPath = buildCanonicalPath(targetYear, targetLang);
-    if (route.path === targetPath && !cleanedQuery.year && !cleanedQuery.lang)
+    if (
+      route.path === targetPath &&
+      !cleanedQuery.year &&
+      !cleanedQuery.lang &&
+      !q.createPath &&
+      !q.createpath &&
+      !q.clearPath &&
+      !q.clearpath
+    )
       return;
     delete cleanedQuery.year;
     delete cleanedQuery.lang;
