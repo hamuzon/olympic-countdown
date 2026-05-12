@@ -376,10 +376,7 @@ function normalizeQueryParam(value) {
 }
 
 function buildCanonicalPath(year, language) {
-  const baseURL = String(config.app?.baseURL || "/");
-  const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
-  const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
-  return `${basePrefix}/${year}/${language}`;
+  return `/${year}/${language}`;
 }
 
 function updateQueryParams() {
