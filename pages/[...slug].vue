@@ -121,17 +121,26 @@ const normalizeParam = (value) => {
   return typeof raw === "string" ? raw.trim() : "";
 };
 
+
+const parseSlugParts = (slugValue) => {
+  const slugParts = Array.isArray(slugValue) ? slugValue.map((part) => normalizeParam(part)) : [];
+  const year = slugParts.find((part) => /^\d{4}$/.test(part)) || "";
+  const langValue = slugParts.find((part) => part === "ja" || part === "en") || "";
+  return { year, lang: langValue };
+};
+
 /**
  * Extracts initial state from URL slug/query or local storage.
  */
 const getInitialState = () => {
-  const slug = route.params.slug || []; // This will be an array like ['2024', 'ja'] or just ['2024']
+  const slug = route.params.slug || [];
+  const parsedSlug = parseSlugParts(slug);
   const q = route.query;
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = normalizeParam(slug[0]) || normalizeParam(q.year) || fromCreatePath.year; // Path param takes precedence, then query
-  let resLang = normalizeParam(slug[1]) || normalizeParam(q.lang) || fromCreatePath.lang; // Path param takes precedence, then query
+  let resYear = parsedSlug.year || normalizeParam(q.year) || fromCreatePath.year;
+  let resLang = parsedSlug.lang || normalizeParam(q.lang) || fromCreatePath.lang;
   let resMode = "summer";
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
