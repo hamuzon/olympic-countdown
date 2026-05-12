@@ -35,11 +35,13 @@ export async function onRequest(context) {
   // --- Parsing Year and Language ---
   let year = url.searchParams.get("year");
   let lang = url.searchParams.get("lang");
-  const qCP = url.searchParams.get("createPath");
+  const qCP = url.searchParams.get("createPath") || url.searchParams.get("createpath") || url.searchParams.get("clearPath") || url.searchParams.get("clearpath");
 
   // createPathからの抽出ロジックを追加
   if (!year && qCP) {
-    const parts = qCP.split("/").filter(Boolean);
+    let decoded = qCP;
+    try { decoded = decodeURIComponent(qCP); } catch {}
+    const parts = decoded.split("/").filter(Boolean);
     const yMatch = parts.find(p => /^\d{4}$/.test(p));
     if (yMatch) {
       year = yMatch;
@@ -88,7 +90,6 @@ export async function onRequest(context) {
   canonicalUrl.pathname = url.pathname.split('/').filter(p => !/^\d{4}$/.test(p) && p !== 'ja' && p !== 'en').join('/') || '/';
   canonicalUrl.searchParams.set('year', year);
   canonicalUrl.searchParams.set('lang', lang);
-  
   // --- HTML Rewriting ---
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })

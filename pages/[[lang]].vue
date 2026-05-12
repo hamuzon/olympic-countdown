@@ -39,13 +39,27 @@ const getAllYears = () => [...Object.keys(eventsData.summer), ...Object.keys(eve
 const findNearestFutureEvent = (now = Date.now()) => 
   getAllYears().find(yr => new Date((eventsData.summer[yr] || eventsData.winter[yr]).end).getTime() > now) || getAllYears().at(-1);
 
+const parseCreatePath = (value) => {
+  if (!value) return {};
+  const decoded = (() => {
+    try { return decodeURIComponent(String(value)); } catch { return String(value); }
+  })();
+  const parts = decoded.split('/').filter(Boolean);
+  return {
+    year: parts.find((part) => /^\d{4}$/.test(part)),
+    lang: parts.find((part) => part === 'ja' || part === 'en')
+  };
+};
+
 /**
  * Helper to extract state from URL or fallback
  */
 const getInitialState = () => {
   const q = route.query;
-  let resYear = q.year;
-  let resLang = q.lang;
+  const createPathValue = q.createPath || q.createpath || q.clearPath || q.clearpath;
+  const fromCreatePath = parseCreatePath(createPathValue);
+  let resYear = q.year || fromCreatePath.year;
+  let resLang = q.lang || fromCreatePath.lang;
   let resMode = 'summer';
 
   // 1. Nuxt Route Params (using pages/[[year]]/[[lang]].vue structure)
@@ -171,9 +185,10 @@ const seoData = computed(() => {
   const isJa = lang.value === "ja";
   const data = eventsData[mode.value]?.[currentYearKey.value];
   if (!data) return null;
-  const cityName = data.city[lang.value];
-  const season = isJa ? (mode.value === "summer" ? "夏季" : "冬季") : (mode.value === "summer" ? "Summer" : "Winter");
-
+  const cityName = data.city?.[lang.value] || '';
+  const season = isJa
+    ? (mode.value === 'summer' ? '夏季' : '冬季')
+    : (mode.value === 'summer' ? 'Summer' : 'Winter');
   const title = isJa
     ? `${currentYearKey.value} ${cityName} ${season}オリンピック カウントダウン`
     : `${currentYearKey.value} ${cityName} ${season} Olympics Countdown`;
@@ -228,6 +243,7 @@ function setMode(m) {
 function toggleLang() {
   lang.value = lang.value === "ja" ? "en" : "ja";
   if (process.client) {
+    syncStateFromQuery();
     localStorage.setItem('olympicCountdownLang', lang.value);
   }
   updateQueryParams();
@@ -241,6 +257,27 @@ function changeYear(event) {
   updateQueryParams();
 }
 
+
+function syncStateFromQuery() {
+  const q = route.query;
+  const createPathValue = q.createPath || q.createpath || q.clearPath || q.clearpath;
+  const fromCreatePath = parseCreatePath(createPathValue);
+  const requestedYear = String(q.year || fromCreatePath.year || '').trim();
+  const requestedLang = q.lang || fromCreatePath.lang;
+
+  if (requestedLang === 'ja' || requestedLang === 'en') {
+    lang.value = requestedLang;
+  }
+
+  if (eventsData.winter[requestedYear]) {
+    mode.value = 'winter';
+    currentYearKey.value = requestedYear;
+  } else if (eventsData.summer[requestedYear]) {
+    mode.value = 'summer';
+    currentYearKey.value = requestedYear;
+  }
+}
+
 function updateQueryParams() {
   if (!process.client) return;
   const q = { ...route.query };
@@ -248,10 +285,13 @@ function updateQueryParams() {
   const targetLang = lang.value;
 
   // すでにURLが期待通りであれば処理をスキップ（高速化と不要な履歴生成防止）
-  if (q.year === targetYear && q.lang === targetLang && !q.createPath) return;
+  if (q.year === targetYear && q.lang === targetLang && !q.createPath && !q.createpath && !q.clearPath && !q.clearpath) return;
 
   const newQuery = { ...q, year: targetYear, lang: targetLang };
-  delete newQuery.createPath; // createPath を削除してクリーンアップ
+  delete newQuery.createPath;
+  delete newQuery.createpath;
+  delete newQuery.clearPath;
+  delete newQuery.clearpath; // createPath系クエリを削除してクリーンアップ
   
   router.replace({ query: newQuery, hash: route.hash });
 }
@@ -326,6 +366,7 @@ const noticeText = computed(() => {
 // --- Lifecycle ---
 onMounted(() => {
   if (process.client) {
+    syncStateFromQuery();
     localStorage.setItem('olympicCountdownLang', lang.value);
     localStorage.setItem('olympicCountdownMode', mode.value);
     localStorage.setItem('olympicCountdownYear', currentYearKey.value);
