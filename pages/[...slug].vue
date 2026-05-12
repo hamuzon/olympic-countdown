@@ -41,7 +41,10 @@ const findNearestFutureEvent = (now = Date.now()) =>
 
 const parseCreatePath = (value) => {
   if (!value) return {};
-  const parts = String(value).split('/').filter(Boolean);
+  const decoded = (() => {
+    try { return decodeURIComponent(String(value)); } catch { return String(value); }
+  })();
+  const parts = decoded.split('/').filter(Boolean);
   return {
     year: parts.find((part) => /^\d{4}$/.test(part)),
     lang: parts.find((part) => part === 'ja' || part === 'en')
@@ -54,7 +57,8 @@ const parseCreatePath = (value) => {
 const getInitialState = () => {
   const slug = route.params.slug || []; // This will be an array like ['2024', 'ja'] or just ['2024']
   const q = route.query;
-  const fromCreatePath = parseCreatePath(q.createPath);
+  const createPathValue = q.createPath || q.createpath || q.clearPath || q.clearpath;
+  const fromCreatePath = parseCreatePath(createPathValue);
   let resYear = slug[0] || q.year || fromCreatePath.year; // Path param takes precedence, then query
   let resLang = slug[1] || q.lang || fromCreatePath.lang; // Path param takes precedence, then query
   let resMode = 'summer';
@@ -255,10 +259,13 @@ function updateQueryParams() {
   const targetLang = lang.value;
 
   // すでにURLが期待通りであれば処理をスキップ（高速化と不要な履歴生成防止）
-  if (q.year === targetYear && q.lang === targetLang && !q.createPath) return;
+  if (q.year === targetYear && q.lang === targetLang && !q.createPath && !q.createpath && !q.clearPath && !q.clearpath) return;
 
   const newQuery = { ...q, year: targetYear, lang: targetLang };
-  delete newQuery.createPath; // createPath を削除してクリーンアップ
+  delete newQuery.createPath;
+  delete newQuery.createpath;
+  delete newQuery.clearPath;
+  delete newQuery.clearpath; // createPath系クエリを削除してクリーンアップ
   
   router.replace({ query: newQuery, hash: route.hash });
 }
