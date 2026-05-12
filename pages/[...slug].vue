@@ -11,6 +11,26 @@ const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
 
+function validateRouteOrThrow() {
+  const pathParts = route.path.split("/").filter(Boolean);
+  const hasYearInPath = pathParts.some((part) => /^\d{4}$/.test(part));
+  const isLangOnlyPath = pathParts.length === 1 && (pathParts[0] === "ja" || pathParts[0] === "en");
+  const hasLegacyHints = Boolean(
+    route.query.year ||
+      route.query.lang ||
+      route.query.createPath ||
+      route.query.createpath ||
+      route.query.clearPath ||
+      route.query.clearpath,
+  );
+
+  if (pathParts.length > 0 && !hasYearInPath && !isLangOnlyPath && !hasLegacyHints) {
+    throw createError({ statusCode: 404, statusMessage: "Page Not Found" });
+  }
+}
+
+validateRouteOrThrow();
+
 // --- Static Data ---
 const eventsData = {
   summer: {
@@ -96,6 +116,11 @@ const parseCreatePath = (value) => {
   };
 };
 
+const normalizeParam = (value) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
+};
+
 /**
  * Extracts initial state from URL slug/query or local storage.
  */
@@ -105,8 +130,8 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = slug[0] || q.year || fromCreatePath.year; // Path param takes precedence, then query
-  let resLang = slug[1] || q.lang || fromCreatePath.lang; // Path param takes precedence, then query
+  let resYear = normalizeParam(slug[0]) || normalizeParam(q.year) || fromCreatePath.year; // Path param takes precedence, then query
+  let resLang = normalizeParam(slug[1]) || normalizeParam(q.lang) || fromCreatePath.lang; // Path param takes precedence, then query
   let resMode = "summer";
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
@@ -321,8 +346,8 @@ function syncStateFromQuery() {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  const requestedYear = String(q.year || fromCreatePath.year || "").trim();
-  const requestedLang = q.lang || fromCreatePath.lang;
+  const requestedYear = normalizeQueryParam(q.year) || String(fromCreatePath.year || "").trim();
+  const requestedLang = normalizeQueryParam(q.lang) || fromCreatePath.lang;
 
   if (requestedLang === "ja" || requestedLang === "en") {
     lang.value = requestedLang;
@@ -335,6 +360,17 @@ function syncStateFromQuery() {
     mode.value = "summer";
     currentYearKey.value = requestedYear;
   }
+}
+
+function normalizeQueryParam(value) {
+  return normalizeParam(value);
+}
+
+function buildCanonicalPath(year, language) {
+  const baseURL = String(config.app?.baseURL || "/");
+  const normalizedBase = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+  const basePrefix = normalizedBase && normalizedBase !== "/" ? normalizedBase : "";
+  return `${basePrefix}/${year}/${language}`;
 }
 
 function updateQueryParams() {
@@ -350,8 +386,16 @@ function updateQueryParams() {
   delete cleanedQuery.clearpath;
 
   if (CONFIG.URL_SCHEME === "path") {
-    const targetPath = `/${targetYear}/${targetLang}`;
-    if (route.path === targetPath && !cleanedQuery.year && !cleanedQuery.lang)
+    const targetPath = buildCanonicalPath(targetYear, targetLang);
+    if (
+      route.path === targetPath &&
+      !cleanedQuery.year &&
+      !cleanedQuery.lang &&
+      !q.createPath &&
+      !q.createpath &&
+      !q.clearPath &&
+      !q.clearpath
+    )
       return;
     delete cleanedQuery.year;
     delete cleanedQuery.lang;
@@ -361,8 +405,8 @@ function updateQueryParams() {
 
   // query方式を使う場合（旧 createPath/clearPath 方式からの移行を含む）
   if (
-    q.year === targetYear &&
-    q.lang === targetLang &&
+    normalizeQueryParam(q.year) === targetYear &&
+    normalizeQueryParam(q.lang) === targetLang &&
     !q.createPath &&
     !q.createpath &&
     !q.clearPath &&
