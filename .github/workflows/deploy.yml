@@ -26,13 +26,27 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Install dependencies
         run: npm install
+
+      - name: Restore Nuxt cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .nuxt
+          key: ${{ runner.os }}-nuxt-build-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuxt-build-
+
       - name: Build
         run: npm run generate
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
