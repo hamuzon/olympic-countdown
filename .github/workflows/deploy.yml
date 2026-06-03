@@ -20,8 +20,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,6 +40,7 @@ jobs:
         with:
           path: |
             .nuxt
+            node_modules/.cache
           key: ${{ runner.os }}-nuxt-build-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuxt-build-
