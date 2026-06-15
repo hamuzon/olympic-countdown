@@ -14,16 +14,14 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "nuxt": "^3.11.2",
-    "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "nuxt": "^4.4.8"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.4.5"
+    "@types/node": "^25.9.3",
+    "typescript": "^6.0.3"
   },
   "overrides": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.25.12",
     "commander": "^13.1.0"
   }
 }
