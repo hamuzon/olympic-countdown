@@ -13,15 +13,13 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
-  "dependencies": {
-    "nuxt": "^4.4.8"
-  },
   "devDependencies": {
     "@types/node": "^25.9.3",
+    "nuxt": "^4.4.8",
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "esbuild": "^0.25.12",
-    "commander": "^13.1.0"
+    "esbuild": ">=0.25.0",
+    "commander": ">=13.1.0"
   }
 }
