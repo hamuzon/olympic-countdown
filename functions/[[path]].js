@@ -21,7 +21,17 @@ const parseCreatePath = (value) => {
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const response = await env.ASSETS.fetch(request);
+  let response = await env.ASSETS.fetch(request);
+
+  if (
+    response.status === 404 &&
+    !url.pathname.endsWith("/") &&
+    !url.pathname.split("/").pop()?.includes(".")
+  ) {
+    const indexUrl = new URL(request.url);
+    indexUrl.pathname = `${url.pathname}/index.html`;
+    response = await env.ASSETS.fetch(new Request(indexUrl, request));
+  }
 
   // HTML以外、またはサブディレクトリ内のファイルなどはそのまま返す
   const contentType = response.headers.get("content-type") || "";
@@ -66,9 +76,9 @@ export async function onRequest(context) {
   // パス（/2024/en など）からの抽出
   if (!year && isPathBased) {
     year = pathParts[yearIdx];
-    const potentialLang = pathParts[yearIdx + 1];
-    if (!lang && (potentialLang === "ja" || potentialLang === "en"))
-      lang = potentialLang;
+  }
+  if (!lang && isPathBased) {
+    lang = pathParts.find((part) => part === "ja" || part === "en");
   }
 
   // Defaults
@@ -106,8 +116,10 @@ export async function onRequest(context) {
   const hasLegacyQueryYearLang = Boolean(
     url.searchParams.get("year") || url.searchParams.get("lang"),
   );
+  const isNonCanonicalPath =
+    isPathBased && url.pathname !== canonicalRedirectUrl.pathname;
   const shouldRedirectToCanonical =
-    isLegacyCreatePath || hasLegacyQueryYearLang;
+    isLegacyCreatePath || hasLegacyQueryYearLang || isNonCanonicalPath;
   if (
     shouldRedirectToCanonical &&
     `${url.pathname}${url.search}` !==
