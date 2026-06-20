@@ -22,10 +22,11 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   const host = request.headers.get("host") || url.hostname;
+  const hostname = host.replace(/:\d+$/, "");
 
-  if (host.endsWith(".")) {
+  if (hostname.endsWith(".")) {
     const redirectUrl = new URL(request.url);
-    redirectUrl.hostname = host.slice(0, -1);
+    redirectUrl.hostname = hostname.slice(0, -1);
 
     return Response.redirect(redirectUrl.toString(), 301);
   }
