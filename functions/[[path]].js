@@ -1,4 +1,5 @@
 import { URL_SETTINGS } from "../url-scheme.config.js";
+import { redirectTrailingDotHost } from "./host.js";
 
 /**
  * Cloudflare Pages Function
@@ -20,6 +21,9 @@ const parseCreatePath = (value) => {
 
 export async function onRequest(context) {
   const { request, env } = context;
+  const trailingDotRedirect = redirectTrailingDotHost(request);
+  if (trailingDotRedirect) return trailingDotRedirect;
+
   const url = new URL(request.url);
   const response = await env.ASSETS.fetch(request);
 
