@@ -31,6 +31,11 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
         { rel: 'icon', sizes: 'any', href: '/favicon.ico' }
+      ],
+      script: [
+        {
+          innerHTML: `if (window.location.hostname.endsWith('.')) { window.location.replace(window.location.href.replace(window.location.hostname, window.location.hostname.slice(0, -1))); }`
+        }
       ]
     }
   },
