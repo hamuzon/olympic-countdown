@@ -10,6 +10,7 @@ import { URL_SETTINGS } from "~/url-scheme.config.js";
 const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
+const siteUrl = config.public.siteUrl;
 
 function validateRouteOrThrow() {
   const pathParts = route.path.split("/").filter(Boolean);
@@ -274,17 +275,20 @@ const seoData = computed(() => {
 
 
   const resolveBaseUrl = (host, _protocol) => {
-    let baseUrl = "https://olympic-countdown.hamusata.f5.si";
+    // ビルド時に環境変数で固定されている場合はそれを最優先
+    if (siteUrl) return siteUrl;
 
     const hostname = (host || "").replace(/:\d+$/, "");
 
     if (hostname === "hamuzon.github.io") {
-      baseUrl = "https://hamuzon.github.io/olympic-countdown";
-    } else if (hostname === "olympic-countdown.hamuzon-jp.f5.si") {
-      baseUrl = `https://${hostname}`;
+      return "https://hamuzon.github.io/olympic-countdown";
     }
 
-    return baseUrl;
+    if (hostname === "olympic-countdown.hamuzon-jp.f5.si") {
+      return "https://olympic-countdown.hamuzon-jp.f5.si";
+    }
+
+    return "https://olympic-countdown.hamusata.f5.si";
   };
 
   const host = requestUrl.host || "";
