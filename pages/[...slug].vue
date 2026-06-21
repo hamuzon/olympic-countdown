@@ -273,12 +273,29 @@ const seoData = computed(() => {
     : `${currentYearKey.value} ${cityName} ${season} Olympics countdown! Real-time timer for before, during, and after the Games.`;
 
   // OGP URLの正規化 (Cloudflare/Actions環境でのSSR対応)
-  const host = requestUrl.host || "hamuzon.github.io";
+  // ホスト名に応じてベースURLを決定する
+  const resolveBaseUrl = (host, protocol) => {
+    // デフォルト: olympic-countdown.hamusata.f5.si
+    let baseUrl = "https://olympic-countdown.hamusata.f5.si";
+
+    const hostname = (host || "").replace(/:\d+$/, ""); // ポート番号を除去
+
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+      // localhost はポート込みのリクエストURLをそのまま使用
+      baseUrl = `${protocol || "http:"}//${host}`;
+    } else if (hostname === "hamuzon.github.io") {
+      baseUrl = "https://hamuzon.github.io/olympic-countdown";
+    } else if (hostname === "olympic-countdown.hamuzon-jp.f5.si") {
+      baseUrl = `https://${hostname}`;
+    }
+    // olympic-countdown.hamusata.f5.si その他 → デフォルトのまま
+
+    return baseUrl;
+  };
+
+  const host = requestUrl.host || "";
   const protocol = requestUrl.protocol || "https:";
-  const baseUrl = `${protocol}//${host}${config.app.baseURL}`.replace(
-    /\/$/,
-    "",
-  );
+  const baseUrl = resolveBaseUrl(host, protocol);
   const prettyUrl = `${baseUrl}/${currentYearKey.value}/${lang.value}`;
 
   return {
