@@ -1,4 +1,5 @@
-import { URL_SETTINGS } from "~/url-scheme.config.js";
+import { defineNuxtRouteMiddleware, navigateTo, useRuntimeConfig } from "#imports";
+import { URL_SETTINGS } from "../url-scheme.config";
 
 const normalizeParam = (value: unknown): string => {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -72,11 +73,11 @@ export default defineNuxtRouteMiddleware((to) => {
   const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
   if (!shouldCanonicalizePath) return;
 
-  const targetYear = fromCp.year || yearFromQuery || yearFromPath || getFallbackYear();
+  const targetYear = String(fromCp.year || yearFromQuery || yearFromPath || getFallbackYear());
   const rawTargetLang = fromCp.lang || langFromQuery || langFromPath;
   const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";
 
-  const cleanedQuery = { ...to.query } as Record<string, unknown>;
+  const cleanedQuery = { ...to.query };
   delete cleanedQuery.year;
   delete cleanedQuery.lang;
   delete cleanedQuery.createPath;
