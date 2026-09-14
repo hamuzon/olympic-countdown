@@ -122,6 +122,11 @@ const normalizeParam = (value) => {
   return typeof raw === "string" ? raw.trim() : "";
 };
 
+const hasQueryParam = (value) => {
+  if (Array.isArray(value) && value.length > 0) return true;
+  return typeof value === "string" && value.trim() !== "";
+};
+
 
 const parseSlugParts = (slugValue) => {
   const slugParts = Array.isArray(slugValue) ? slugValue.map((part) => normalizeParam(part)) : [];
@@ -140,8 +145,16 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = fromCreatePath.year || normalizeParam(q.year) || parsedSlug.year;
-  let resLang = fromCreatePath.lang || normalizeParam(q.lang) || parsedSlug.lang;
+  const hasQueryYear = hasQueryParam(q.year);
+  const hasQueryLang = hasQueryParam(q.lang);
+  const queryYear = normalizeParam(q.year);
+  const queryLang = normalizeParam(q.lang);
+  let resYear = hasQueryYear
+    ? queryYear
+    : fromCreatePath.year || parsedSlug.year;
+  let resLang = hasQueryLang
+    ? queryLang
+    : fromCreatePath.lang || parsedSlug.lang;
   let resMode = "summer";
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
@@ -149,8 +162,8 @@ const getInitialState = () => {
     process.client &&
     !/^(1|on|true)$/i.test(String(q.reset || q.reboot || q.restart))
   ) {
-    resLang = resLang || localStorage.getItem("olympicCountdownLang");
-    if (!resYear) {
+    if (!hasQueryLang) resLang = resLang || localStorage.getItem("olympicCountdownLang");
+    if (!hasQueryYear && !resYear) {
       // Only try to load from localStorage if year is not provided in URL
       const sYear = localStorage.getItem("olympicCountdownYear");
       const sMode = localStorage.getItem("olympicCountdownMode");
@@ -434,7 +447,13 @@ function updateQueryParams() {
       return;
     delete cleanedQuery.year;
     delete cleanedQuery.lang;
-    router.replace({ path: targetPath, query: cleanedQuery, hash: route.hash });
+    const canonicalUrl = new URL(window.location.href);
+    const baseURL = String(config.app?.baseURL || "/");
+    const normalizedBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
+    canonicalUrl.pathname = `${normalizedBase}${targetPath.slice(1)}`;
+    canonicalUrl.search = new URLSearchParams(cleanedQuery).toString();
+    canonicalUrl.hash = route.hash;
+    window.history.replaceState(window.history.state, "", canonicalUrl);
     return;
   }
 

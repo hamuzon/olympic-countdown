@@ -121,6 +121,11 @@ const normalizeParam = (value) => {
   return typeof raw === "string" ? raw.trim() : "";
 };
 
+const hasQueryParam = (value) => {
+  if (Array.isArray(value) && value.length > 0) return true;
+  return typeof value === "string" && value.trim() !== "";
+};
+
 /**
  * Helper to extract state from URL or fallback
  */
@@ -129,22 +134,26 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = normalizeParam(q.year) || fromCreatePath.year;
-  let resLang = normalizeParam(q.lang) || fromCreatePath.lang;
+  const hasQueryYear = hasQueryParam(q.year);
+  const hasQueryLang = hasQueryParam(q.lang);
+  const queryYear = normalizeParam(q.year);
+  const queryLang = normalizeParam(q.lang);
+  let resYear = hasQueryYear
+    ? queryYear
+    : fromCreatePath.year || route.params.year;
+  let resLang = hasQueryLang
+    ? queryLang
+    : fromCreatePath.lang || route.params.lang;
   let resMode = "summer";
 
-  // 1. Nuxt Route Params (using pages/[[year]]/[[lang]].vue structure)
-  resYear = resYear || route.params.year;
-  resLang = resLang || route.params.lang;
-
-  // 2. Client-side Fallback (Server-side skips to keep SEO static)
+  // Client-side fallback is used only when the URL does not specify a value.
   if (process.client) {
     const reset = /^(1|on|true)$/i.test(
       String(q.reset || q.reboot || q.restart),
     );
     if (!reset) {
-      resLang = resLang || localStorage.getItem("olympicCountdownLang");
-      if (!resYear) {
+      if (!hasQueryLang) resLang = resLang || localStorage.getItem("olympicCountdownLang");
+      if (!hasQueryYear && !resYear) {
         const sYear = localStorage.getItem("olympicCountdownYear");
         const sMode = localStorage.getItem("olympicCountdownMode");
         if (sYear && sMode && eventsData[sMode]?.[sYear]) {
@@ -413,7 +422,13 @@ function updateQueryParams() {
       return;
     delete cleanedQuery.year;
     delete cleanedQuery.lang;
-    router.replace({ path: targetPath, query: cleanedQuery, hash: route.hash });
+    const canonicalUrl = new URL(window.location.href);
+    const baseURL = String(config.app?.baseURL || "/");
+    const normalizedBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
+    canonicalUrl.pathname = `${normalizedBase}${targetPath.slice(1)}`;
+    canonicalUrl.search = new URLSearchParams(cleanedQuery).toString();
+    canonicalUrl.hash = route.hash;
+    window.history.replaceState(window.history.state, "", canonicalUrl);
     return;
   }
 
