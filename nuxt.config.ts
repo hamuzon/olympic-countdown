@@ -34,6 +34,32 @@ export default defineNuxtConfig({
       ],
       script: [
         {
+          innerHTML: `(() => {
+            const basePath = ${JSON.stringify(process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}` : '')};
+            const url = new URL(window.location.href);
+            const rootPath = basePath || '/';
+            const currentPath = url.pathname.replace(/\\/+$/, '') || '/';
+            if (currentPath !== (rootPath.replace(/\\/+$/, '') || '/')) return;
+
+            const parsePath = (value) => String(value || '').split('/').filter(Boolean);
+            const createPath = url.searchParams.get('createPath') ||
+              url.searchParams.get('createpath') ||
+              url.searchParams.get('clearPath') ||
+              url.searchParams.get('clearpath');
+            const pathParts = parsePath(createPath);
+            const year = url.searchParams.get('year') || pathParts.find((part) => /^\\d{4}$/.test(part));
+            const langValue = url.searchParams.get('lang') || pathParts.find((part) => part === 'ja' || part === 'en');
+            const lang = langValue === 'en' || langValue === 'ja' ? langValue : '';
+            const validYears = ['2020', '2022', '2024', '2026', '2028', '2030', '2032', '2034'];
+            if (!validYears.includes(year) || !lang) return;
+
+            const canonicalPath = (rootPath === '/' ? '' : rootPath) + '/' + year + '/' + lang;
+            url.pathname = canonicalPath;
+            ['year', 'lang', 'createPath', 'createpath', 'clearPath', 'clearpath'].forEach((key) => url.searchParams.delete(key));
+            window.location.replace(url.toString());
+          })();`
+        },
+        {
           innerHTML: `if (window.location.hostname.endsWith('.')) { window.location.replace(window.location.href.replace(window.location.hostname, window.location.hostname.slice(0, -1))); }`
         }
       ]
