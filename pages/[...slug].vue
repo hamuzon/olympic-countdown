@@ -140,8 +140,8 @@ const getInitialState = () => {
   const createPathValue =
     q.createPath || q.createpath || q.clearPath || q.clearpath;
   const fromCreatePath = parseCreatePath(createPathValue);
-  let resYear = parsedSlug.year || normalizeParam(q.year) || fromCreatePath.year;
-  let resLang = parsedSlug.lang || normalizeParam(q.lang) || fromCreatePath.lang;
+  let resYear = fromCreatePath.year || normalizeParam(q.year) || parsedSlug.year;
+  let resLang = fromCreatePath.lang || normalizeParam(q.lang) || parsedSlug.lang;
   let resMode = "summer";
 
   // Client-side Fallback & Local Storage (SSR skips to keep SEO static)
