@@ -421,6 +421,10 @@ function buildCanonicalPath(year, language) {
   return `/${year}/${language}`;
 }
 
+function withoutTrailingSlash(path) {
+  return path.length > 1 ? path.replace(/\/$/, "") : path;
+}
+
 function updateQueryParams() {
   if (!process.client) return;
   const q = { ...route.query };
@@ -436,7 +440,7 @@ function updateQueryParams() {
   if (CONFIG.URL_SCHEME === "path") {
     const targetPath = buildCanonicalPath(targetYear, targetLang);
     if (
-      route.path === targetPath &&
+      withoutTrailingSlash(route.path) === withoutTrailingSlash(targetPath) &&
       !cleanedQuery.year &&
       !cleanedQuery.lang &&
       !q.createPath &&

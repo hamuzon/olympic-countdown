@@ -47,6 +47,9 @@ const stripBasePath = (path: string, baseURL: string) => {
   return path;
 };
 
+const withoutTrailingSlash = (path: string) =>
+  path.length > 1 ? path.replace(/\/$/, "") : path;
+
 export default defineNuxtRouteMiddleware((to) => {
   if (URL_SETTINGS.urlScheme !== "path") return;
 
@@ -96,7 +99,11 @@ export default defineNuxtRouteMiddleware((to) => {
       to.query.clearpath,
   );
 
-  if (relativePath === targetPath && !hasLegacyHints) return;
+  if (
+    withoutTrailingSlash(relativePath) === withoutTrailingSlash(targetPath) &&
+    !hasLegacyHints
+  )
+    return;
 
   return navigateTo(
     { path: targetPath, query: cleanedQuery, hash: to.hash },
