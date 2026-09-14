@@ -428,7 +428,7 @@ function updateQueryParams() {
     canonicalUrl.pathname = `${normalizedBase}${targetPath.slice(1)}`;
     canonicalUrl.search = new URLSearchParams(cleanedQuery).toString();
     canonicalUrl.hash = route.hash;
-    window.history.replaceState(window.history.state, "", canonicalUrl);
+    window.location.replace(canonicalUrl.toString());
     return;
   }
 
