@@ -70,6 +70,9 @@ export default defineNuxtRouteMiddleware((to) => {
   const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
   if (!shouldCanonicalizePath) return;
 
+  // Let the root page resolve query parameters before converting them to a path.
+  if (relativePath === "/" && (yearFromQuery || langFromQuery || cp)) return;
+
   const targetYear = fromCp.year || yearFromQuery || yearFromPath || getFallbackYear();
   const rawTargetLang = fromCp.lang || langFromQuery || langFromPath;
   const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";

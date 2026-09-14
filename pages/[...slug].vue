@@ -367,11 +367,25 @@ function changeYear(event) {
 
 function syncStateFromQuery() {
   const q = route.query;
+  const browserQuery = process.client
+    ? new URLSearchParams(window.location.search)
+    : null;
   const createPathValue =
-    q.createPath || q.createpath || q.clearPath || q.clearpath;
+    q.createPath ||
+    q.createpath ||
+    q.clearPath ||
+    q.clearpath ||
+    browserQuery?.get("createPath") ||
+    browserQuery?.get("createpath") ||
+    browserQuery?.get("clearPath") ||
+    browserQuery?.get("clearpath");
   const fromCreatePath = parseCreatePath(createPathValue);
-  const requestedYear = normalizeQueryParam(q.year) || String(fromCreatePath.year || "").trim();
-  const requestedLang = normalizeQueryParam(q.lang) || fromCreatePath.lang;
+  const requestedYear =
+    normalizeQueryParam(q.year) ||
+    browserQuery?.get("year") ||
+    String(fromCreatePath.year || "").trim();
+  const requestedLang =
+    normalizeQueryParam(q.lang) || browserQuery?.get("lang") || fromCreatePath.lang;
 
   if (requestedLang === "ja" || requestedLang === "en") {
     lang.value = requestedLang;
