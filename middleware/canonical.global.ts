@@ -109,8 +109,11 @@ export default defineNuxtRouteMiddleware((to) => {
     to.query.clearpath,
   );
 
+  const normalizedRelativePath = relativePath === "/" ? "/" : withoutTrailingSlash(relativePath);
+  const normalizedTargetPath = targetPath === "/" ? "/" : withoutTrailingSlash(targetPath);
+
   if (
-    withoutTrailingSlash(relativePath) === withoutTrailingSlash(targetPath) &&
+    normalizedRelativePath === normalizedTargetPath &&
     !hasLegacyHints
   )
     return;

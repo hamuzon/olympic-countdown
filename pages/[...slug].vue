@@ -446,8 +446,11 @@ function updateQueryParams() {
 
   if (CONFIG.URL_SCHEME === "path") {
     const targetPath = buildCanonicalPath(targetYear, targetLang);
+    const normalizedRoutePath = route.path === "/" ? "/" : withoutTrailingSlash(route.path);
+    const normalizedTargetPath = targetPath === "/" ? "/" : withoutTrailingSlash(targetPath);
+
     if (
-      withoutTrailingSlash(route.path) === withoutTrailingSlash(targetPath) &&
+      normalizedRoutePath === normalizedTargetPath &&
       !cleanedQuery.year &&
       !cleanedQuery.lang &&
       !q.createPath &&
