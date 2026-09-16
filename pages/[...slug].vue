@@ -452,7 +452,12 @@ function updateQueryParams() {
     delete cleanedQuery.year;
     delete cleanedQuery.lang;
     const canonicalUrl = new URL(window.location.href);
-    const baseURL = String(config.app?.baseURL || "/");
+    const isGitHubPagesDefault =
+      typeof window !== "undefined" &&
+      window.location.hostname === "hamuzon.github.io";
+    const baseURL = isGitHubPagesDefault
+      ? String(config.app?.baseURL || "/")
+      : "/";
     const normalizedBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
     canonicalUrl.pathname = `${normalizedBase}${targetPath.slice(1)}`;
     canonicalUrl.search = new URLSearchParams(cleanedQuery).toString();

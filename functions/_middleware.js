@@ -42,9 +42,10 @@ export async function onRequest(context) {
     url.searchParams.get("createpath") ||
     url.searchParams.get("clearPath") ||
     url.searchParams.get("clearpath");
-  const fromCreatePath = createPath ? parseCreatePath(createPath) : {};
-  const year = fromCreatePath.year || normalizeParam(url.searchParams.get("year"));
-  const langValue = fromCreatePath.lang || normalizeParam(url.searchParams.get("lang"));
+  const yearFromQuery = normalizeParam(url.searchParams.get("year"));
+  const langFromQuery = normalizeParam(url.searchParams.get("lang"));
+  const year = yearFromQuery || fromCreatePath.year;
+  const langValue = langFromQuery || fromCreatePath.lang;
   const lang = langValue === "en" || langValue === "ja" ? langValue : "ja";
 
   if (OLYMPIC_YEARS.has(year)) {

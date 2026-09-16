@@ -37,9 +37,10 @@ export default defineNuxtConfig({
           innerHTML: `(() => {
             const basePath = ${JSON.stringify(process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}` : '')};
             const url = new URL(window.location.href);
-            const rootPath = basePath || '/';
-            const currentPath = url.pathname.replace(/\\/+$/, '') || '/';
-            if (currentPath !== (rootPath.replace(/\\/+$/, '') || '/')) return;
+            const pathName = url.pathname.replace(/\\/+$/, '') || '/';
+            const isRepoPath = basePath && (pathName === basePath || pathName.startsWith(basePath + '/'));
+            const rootPath = isRepoPath ? basePath : '/';
+            if (pathName !== rootPath) return;
 
             const parsePath = (value) => String(value || '').split('/').filter(Boolean);
             const createPath = url.searchParams.get('createPath') ||
@@ -47,11 +48,13 @@ export default defineNuxtConfig({
               url.searchParams.get('clearPath') ||
               url.searchParams.get('clearpath');
             const pathParts = parsePath(createPath);
-            const year = url.searchParams.get('year') || pathParts.find((part) => /^\\d{4}$/.test(part));
-            const langValue = url.searchParams.get('lang') || pathParts.find((part) => part === 'ja' || part === 'en');
-            const lang = langValue === 'en' || langValue === 'ja' ? langValue : '';
+            const yearFromQuery = url.searchParams.get('year');
+            const langFromQuery = url.searchParams.get('lang');
+            const year = yearFromQuery || pathParts.find((part) => /^\\d{4}$/.test(part));
+            const rawLang = langFromQuery || pathParts.find((part) => part === 'ja' || part === 'en');
+            const lang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ja';
             const validYears = ['2020', '2022', '2024', '2026', '2028', '2030', '2032', '2034'];
-            if (!validYears.includes(year) || !lang) return;
+            if (!validYears.includes(year)) return;
 
             const canonicalPath = (rootPath === '/' ? '' : rootPath) + '/' + year + '/' + lang;
             url.pathname = canonicalPath;

@@ -71,14 +71,24 @@ export default defineNuxtRouteMiddleware((to) => {
   const yearFromQuery = normalizeParam(to.query.year);
   const langFromQuery = normalizeParam(to.query.lang);
 
-  if (relativePath === "/") return;
+  const OLYMPIC_YEARS = new Set([
+    "2020",
+    "2022",
+    "2024",
+    "2026",
+    "2028",
+    "2030",
+    "2032",
+    "2034",
+  ]);
 
   const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
   if (!shouldCanonicalizePath) return;
 
-  const targetYear = String(fromCp.year || yearFromQuery || yearFromPath || getFallbackYear());
-  const rawTargetLang = fromCp.lang || langFromQuery || langFromPath;
-  const targetLang = rawTargetLang === "en" || rawTargetLang === "ja" ? rawTargetLang : "ja";
+  const candidateYear = [yearFromQuery, fromCp.year, yearFromPath].find((y) => OLYMPIC_YEARS.has(y));
+  const targetYear = String(candidateYear || getFallbackYear());
+  const candidateLang = [langFromQuery, fromCp.lang, langFromPath].find((l) => l === "en" || l === "ja");
+  const targetLang = String(candidateLang || "ja");
 
   const cleanedQuery = { ...to.query };
   delete cleanedQuery.year;
@@ -92,11 +102,11 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const hasLegacyHints = Boolean(
     to.query.year ||
-      to.query.lang ||
-      to.query.createPath ||
-      to.query.createpath ||
-      to.query.clearPath ||
-      to.query.clearpath,
+    to.query.lang ||
+    to.query.createPath ||
+    to.query.createpath ||
+    to.query.clearPath ||
+    to.query.clearpath,
   );
 
   if (
