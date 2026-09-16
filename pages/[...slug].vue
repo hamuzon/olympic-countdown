@@ -127,6 +127,11 @@ const hasQueryParam = (value) => {
   return typeof value === "string" && value.trim() !== "";
 };
 
+const resolvePreferredYearLang = ({ queryYear, queryLang, createPathYear, createPathLang, slugYear, slugLang }) => {
+  const preferredYear = [queryYear, createPathYear, slugYear].find((value) => value && /^\d{4}$/.test(String(value))) || "";
+  const preferredLang = [queryLang, createPathLang, slugLang].find((value) => value === "ja" || value === "en") || "";
+  return { year: preferredYear, lang: preferredLang };
+};
 
 const parseSlugParts = (slugValue) => {
   const slugParts = Array.isArray(slugValue) ? slugValue.map((part) => normalizeParam(part)) : [];
