@@ -126,6 +126,12 @@ const hasQueryParam = (value) => {
   return typeof value === "string" && value.trim() !== "";
 };
 
+const resolvePreferredYearLang = ({ queryYear, queryLang, createPathYear, createPathLang, slugYear, slugLang }) => {
+  const preferredYear = [queryYear, createPathYear, slugYear].find((value) => value && /^\d{4}$/.test(String(value))) || "";
+  const preferredLang = [queryLang, createPathLang, slugLang].find((value) => value === "ja" || value === "en") || "";
+  return { year: preferredYear, lang: preferredLang };
+};
+
 /**
  * Helper to extract state from URL or fallback
  */
@@ -138,12 +144,16 @@ const getInitialState = () => {
   const hasQueryLang = hasQueryParam(q.lang);
   const queryYear = normalizeParam(q.year);
   const queryLang = normalizeParam(q.lang);
-  let resYear = hasQueryYear
-    ? queryYear
-    : fromCreatePath.year || route.params.year;
-  let resLang = hasQueryLang
-    ? queryLang
-    : fromCreatePath.lang || route.params.lang;
+  const preferred = resolvePreferredYearLang({
+    queryYear: hasQueryYear ? queryYear : "",
+    queryLang: hasQueryLang ? queryLang : "",
+    createPathYear: fromCreatePath.year || "",
+    createPathLang: fromCreatePath.lang || "",
+    slugYear: route.params.year || "",
+    slugLang: route.params.lang || "",
+  });
+  let resYear = preferred.year;
+  let resLang = preferred.lang;
   let resMode = "summer";
 
   // Client-side fallback is used only when the URL does not specify a value.
@@ -368,23 +378,25 @@ function syncStateFromQuery() {
     browserQuery?.get("clearPath") ||
     browserQuery?.get("clearpath");
   const fromCreatePath = parseCreatePath(createPathValue);
-  const requestedYear =
-    normalizeQueryParam(q.year) ||
-    browserQuery?.get("year") ||
-    String(fromCreatePath.year || "").trim();
-  const requestedLang =
-    normalizeQueryParam(q.lang) || browserQuery?.get("lang") || fromCreatePath.lang;
+  const preferred = resolvePreferredYearLang({
+    queryYear: normalizeQueryParam(q.year) || browserQuery?.get("year") || "",
+    queryLang: normalizeQueryParam(q.lang) || browserQuery?.get("lang") || "",
+    createPathYear: fromCreatePath.year || "",
+    createPathLang: fromCreatePath.lang || "",
+    slugYear: "",
+    slugLang: "",
+  });
 
-  if (requestedLang === "ja" || requestedLang === "en") {
-    lang.value = requestedLang;
+  if (preferred.lang === "ja" || preferred.lang === "en") {
+    lang.value = preferred.lang;
   }
 
-  if (eventsData.winter[requestedYear]) {
+  if (eventsData.winter[preferred.year]) {
     mode.value = "winter";
-    currentYearKey.value = requestedYear;
-  } else if (eventsData.summer[requestedYear]) {
+    currentYearKey.value = preferred.year;
+  } else if (eventsData.summer[preferred.year]) {
     mode.value = "summer";
-    currentYearKey.value = requestedYear;
+    currentYearKey.value = preferred.year;
   }
 }
 

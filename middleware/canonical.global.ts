@@ -85,9 +85,9 @@ export default defineNuxtRouteMiddleware((to) => {
   const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
   if (!shouldCanonicalizePath) return;
 
-  const candidateYear = [yearFromQuery, fromCp.year, yearFromPath].find((y) => OLYMPIC_YEARS.has(y));
+  const candidateYear = [yearFromQuery, fromCp.year, yearFromPath].find((y) => OLYMPIC_YEARS.has(y)) || "";
   const targetYear = String(candidateYear || getFallbackYear());
-  const candidateLang = [langFromQuery, fromCp.lang, langFromPath].find((l) => l === "en" || l === "ja");
+  const candidateLang = [langFromQuery, fromCp.lang, langFromPath].find((l) => l === "en" || l === "ja") || "";
   const targetLang = String(candidateLang || "ja");
 
   const cleanedQuery = { ...to.query };

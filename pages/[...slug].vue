@@ -393,23 +393,25 @@ function syncStateFromQuery() {
     browserQuery?.get("clearPath") ||
     browserQuery?.get("clearpath");
   const fromCreatePath = parseCreatePath(createPathValue);
-  const requestedYear =
-    normalizeQueryParam(q.year) ||
-    browserQuery?.get("year") ||
-    String(fromCreatePath.year || "").trim();
-  const requestedLang =
-    normalizeQueryParam(q.lang) || browserQuery?.get("lang") || fromCreatePath.lang;
+  const preferred = resolvePreferredYearLang({
+    queryYear: normalizeQueryParam(q.year) || browserQuery?.get("year") || "",
+    queryLang: normalizeQueryParam(q.lang) || browserQuery?.get("lang") || "",
+    createPathYear: fromCreatePath.year || "",
+    createPathLang: fromCreatePath.lang || "",
+    slugYear: "",
+    slugLang: "",
+  });
 
-  if (requestedLang === "ja" || requestedLang === "en") {
-    lang.value = requestedLang;
+  if (preferred.lang === "ja" || preferred.lang === "en") {
+    lang.value = preferred.lang;
   }
 
-  if (eventsData.winter[requestedYear]) {
+  if (eventsData.winter[preferred.year]) {
     mode.value = "winter";
-    currentYearKey.value = requestedYear;
-  } else if (eventsData.summer[requestedYear]) {
+    currentYearKey.value = preferred.year;
+  } else if (eventsData.summer[preferred.year]) {
     mode.value = "summer";
-    currentYearKey.value = requestedYear;
+    currentYearKey.value = preferred.year;
   }
 }
 
