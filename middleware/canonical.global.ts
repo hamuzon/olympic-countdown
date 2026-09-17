@@ -82,7 +82,26 @@ export default defineNuxtRouteMiddleware((to) => {
     "2034",
   ]);
 
-  const shouldCanonicalizePath = pathParts.length > 0 || Boolean(cp || yearFromQuery || langFromQuery);
+  const hasYearInPath = pathParts.some((part) => /^\d{4}$/.test(part));
+  const isLangOnlyPath = pathParts.length === 1 && (pathParts[0] === "ja" || pathParts[0] === "en");
+  const hasLegacyHints = Boolean(
+    to.query.year ||
+    to.query.lang ||
+    to.query.createPath ||
+    to.query.createpath ||
+    to.query.clearPath ||
+    to.query.clearpath,
+  );
+
+  if (pathParts[0] === "404" || pathParts[0] === "404.html") {
+    return;
+  }
+
+  if (pathParts.length > 0 && !hasYearInPath && !isLangOnlyPath && !hasLegacyHints) {
+    return;
+  }
+
+  const shouldCanonicalizePath = pathParts.length > 0 || hasLegacyHints;
   if (!shouldCanonicalizePath) return;
 
   const candidateYear = [yearFromQuery, fromCp.year, yearFromPath].find((y) => OLYMPIC_YEARS.has(y)) || "";
@@ -99,15 +118,6 @@ export default defineNuxtRouteMiddleware((to) => {
   delete cleanedQuery.clearpath;
 
   const targetPath = buildCanonicalPath(targetYear, targetLang);
-
-  const hasLegacyHints = Boolean(
-    to.query.year ||
-    to.query.lang ||
-    to.query.createPath ||
-    to.query.createpath ||
-    to.query.clearPath ||
-    to.query.clearpath,
-  );
 
   const normalizedRelativePath = relativePath === "/" ? "/" : withoutTrailingSlash(relativePath);
   const normalizedTargetPath = targetPath === "/" ? "/" : withoutTrailingSlash(targetPath);
