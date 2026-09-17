@@ -71,31 +71,22 @@ onMounted(() => {
 
 <style scoped>
 .error-page {
-  background: #0a1a2b;
-  font-family: 'Roboto', sans-serif;
-  color: #fff;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: clamp(0.75rem, 4vw, 2rem);
-  background-image: radial-gradient(circle at 50% 0%, #1e3a5f 0%, #0a1a2b 70%);
   box-sizing: border-box;
 }
 
-.error-page ::selection {
-  background: rgba(0, 229, 255, 0.4);
-  color: #ffffff;
-}
-
 .container {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: clamp(14px, 4vw, 24px);
-  padding: clamp(1.5rem, 6vw, 3rem) clamp(1rem, 5vw, 2.5rem);
-  max-width: 520px;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  max-width: 480px;
   min-width: 0;
   width: 100%;
   box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
@@ -174,11 +165,9 @@ p.message span {
   text-decoration: underline;
 }
 
-/* 極小端末 (〜320px) */
 @media (max-width: 320px) {
   .container {
     padding: 1.25rem 0.75rem;
-    border-radius: 12px;
   }
 
   h1 {
@@ -202,7 +191,6 @@ p.message span {
   }
 }
 
-/* 小型スマホ (321px〜480px) */
 @media (min-width: 321px) and (max-width: 480px) {
   .container {
     padding: 1.5rem 1rem;
@@ -213,22 +201,17 @@ p.message span {
   }
 }
 
-/* タブレット (481px〜768px) */
 @media (min-width: 481px) and (max-width: 768px) {
   .container {
-    min-width: 380px;
     max-width: 480px;
     padding: 2.5rem 2rem;
   }
 }
 
-/* タブレット横〜小型デスクトップ (769px〜1024px) */
 @media (min-width: 769px) {
   .container {
-    min-width: 420px;
     max-width: 520px;
     padding: 3rem 2.5rem;
-    box-shadow: 0 0 60px rgba(0, 229, 255, 0.25), 0 0 120px rgba(0, 229, 255, 0.1);
   }
 
   h1 {
@@ -240,7 +223,6 @@ p.message span {
   }
 }
 
-/* 大型デスクトップ (1025px〜) */
 @media (min-width: 1025px) {
   .container {
     max-width: 560px;
