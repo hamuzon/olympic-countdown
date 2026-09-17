@@ -7,9 +7,14 @@
         <span>Sorry, Not Found.</span>
       </p>
 
-      <button id="backLink" class="back-btn" type="button" @click="handleError">
+      <a
+        id="backLink"
+        class="back-btn"
+        :href="homeURL"
+        @click.prevent="handleError"
+      >
         トップページへ戻る
-      </button>
+      </a>
 
       <div class="footer" v-html="footerHTML"></div>
     </div>
@@ -17,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
   error: {
@@ -26,11 +31,34 @@ const props = defineProps({
   }
 });
 
+const config = useRuntimeConfig();
+const requestUrl = useRequestURL();
+
+const isGitHubPages = computed(() => {
+  const hostname = process.client ? window.location.hostname : requestUrl.hostname;
+  return hostname === 'hamuzon.github.io';
+});
+
+const homeURL = computed(() => {
+  if (isGitHubPages.value) {
+    return 'https://hamuzon.github.io/olympic-countdown/';
+  }
+  return config.app?.baseURL || '/';
+});
+
+const assetBase = computed(() => {
+  if (isGitHubPages.value) {
+    return '/olympic-countdown/';
+  }
+  const base = config.app?.baseURL || '/';
+  return base.endsWith('/') ? base : `${base}/`;
+});
+
 useHead({
   title: '404 - Not Found',
   link: [
-    { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
-    { rel: 'icon', sizes: 'any', href: '/favicon.ico' },
+    { rel: 'icon', type: 'image/svg+xml', href: () => `${assetBase.value}icon.svg` },
+    { rel: 'icon', sizes: 'any', href: () => `${assetBase.value}favicon.ico` },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap' }
@@ -40,9 +68,13 @@ useHead({
 const footerHTML = ref('');
 
 const handleError = () => {
-  const config = useRuntimeConfig();
-  const baseURL = config.app?.baseURL || '/';
-  clearError({ redirect: baseURL });
+  const target = homeURL.value;
+  if (process.client && isGitHubPages.value) {
+    clearError();
+    window.location.href = target;
+  } else {
+    clearError({ redirect: target });
+  }
 };
 
 onMounted(() => {
@@ -52,9 +84,9 @@ onMounted(() => {
   
   let yearStr = baseYear.toString();
   if (currentYear > baseYear) {
-    yearStr = `${baseYear}–${currentYear}`;
+    yearStr = `${baseYear} ~ ${currentYear}`;
   } else if (currentYear < baseYear) {
-    yearStr = `${currentYear}–${baseYear}`;
+    yearStr = `${currentYear} ~ ${baseYear}`;
   }
   
   if (hostname === "hamuzon.github.io") {
