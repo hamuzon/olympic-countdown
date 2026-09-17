@@ -78,7 +78,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: clamp(0.75rem, 4vw, 2rem);
   background-image: radial-gradient(circle at 50% 0%, #1e3a5f 0%, #0a1a2b 70%);
   box-sizing: border-box;
 }
@@ -93,9 +93,10 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 3rem 2rem;
-  max-width: 480px;
+  border-radius: clamp(14px, 4vw, 24px);
+  padding: clamp(1.5rem, 6vw, 3rem) clamp(1rem, 5vw, 2.5rem);
+  max-width: 520px;
+  min-width: 0;
   width: 100%;
   box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
   text-align: center;
@@ -105,7 +106,7 @@ onMounted(() => {
 
 h1 {
   font-family: Arial, sans-serif;
-  font-size: 4rem;
+  font-size: clamp(2.5rem, 14vw, 5rem);
   font-weight: 700;
   background: linear-gradient(90deg, #33b5e5, #ffbb33, #ffffff, #99cc00, #ff4444);
   -webkit-background-clip: text;
@@ -117,10 +118,11 @@ h1 {
 }
 
 p.message {
-  font-size: 1.2rem;
+  font-size: clamp(0.95rem, 3.5vw, 1.2rem);
   color: #a0e0ff;
   margin: 0 0 2rem 0;
   font-weight: 500;
+  line-height: 1.6;
 }
 
 p.message span {
@@ -135,12 +137,13 @@ p.message span {
   border-radius: 20px;
   color: #00e5ff;
   font-weight: 600;
-  padding: 10px 24px;
+  padding: clamp(8px, 2.5vw, 10px) clamp(16px, 5vw, 24px);
   cursor: pointer;
   font-family: 'Roboto', sans-serif;
   transition: all 0.3s ease;
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 3vw, 1rem);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .back-btn:hover {
@@ -151,12 +154,13 @@ p.message span {
 }
 
 .footer {
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2.5vw, 0.8rem);
   color: #4dd0e1;
   margin-top: 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1rem;
   opacity: 0.8;
+  word-break: break-word;
 }
 
 :deep(.footer a) {
@@ -170,12 +174,77 @@ p.message span {
   text-decoration: underline;
 }
 
-@media (max-width: 480px) {
+/* 極小端末 (〜320px) */
+@media (max-width: 320px) {
   .container {
-    padding: 2rem 1.5rem;
+    padding: 1.25rem 0.75rem;
+    border-radius: 12px;
   }
+
   h1 {
-    font-size: 3rem;
+    font-size: 2.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  p.message {
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .back-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .footer {
+    margin-top: 1.25rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* 小型スマホ (321px〜480px) */
+@media (min-width: 321px) and (max-width: 480px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  p.message {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* タブレット (481px〜768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .container {
+    min-width: 380px;
+    max-width: 480px;
+    padding: 2.5rem 2rem;
+  }
+}
+
+/* タブレット横〜小型デスクトップ (769px〜1024px) */
+@media (min-width: 769px) {
+  .container {
+    min-width: 420px;
+    max-width: 520px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 0 60px rgba(0, 229, 255, 0.25), 0 0 120px rgba(0, 229, 255, 0.1);
+  }
+
+  h1 {
+    font-size: 5rem;
+  }
+
+  p.message {
+    font-size: 1.2rem;
+  }
+}
+
+/* 大型デスクトップ (1025px〜) */
+@media (min-width: 1025px) {
+  .container {
+    max-width: 560px;
+    padding: 3.5rem 3rem;
   }
 }
 </style>
