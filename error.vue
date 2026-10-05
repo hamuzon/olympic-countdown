@@ -11,7 +11,6 @@
         id="backLink"
         class="back-btn"
         :href="homeURL"
-        @click.prevent="handleError"
       >
         トップページへ戻る
       </a>
@@ -66,16 +65,6 @@ useHead({
 });
 
 const footerHTML = ref('');
-
-const handleError = () => {
-  const target = homeURL.value;
-  if (process.client && isGitHubPages.value) {
-    clearError();
-    window.location.href = target;
-  } else {
-    clearError({ redirect: target });
-  }
-};
 
 onMounted(() => {
   const baseYear = 2025;
