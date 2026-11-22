@@ -44,6 +44,11 @@ export async function onRequest(context) {
     url.searchParams.get("clearpath");
   const yearFromQuery = normalizeParam(url.searchParams.get("year"));
   const langFromQuery = normalizeParam(url.searchParams.get("lang"));
+  // `fromCreatePath` used to be referenced without ever being defined, which
+  // threw a ReferenceError and made Cloudflare return 500 on every request.
+  const fromCreatePath = createPath
+    ? parseCreatePath(createPath)
+    : { year: "", lang: "" };
   const year = yearFromQuery || fromCreatePath.year;
   const langValue = langFromQuery || fromCreatePath.lang;
   const lang = langValue === "en" || langValue === "ja" ? langValue : "ja";
